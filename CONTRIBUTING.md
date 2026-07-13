@@ -11,7 +11,7 @@ npm start          # browser UI at http://localhost:8770/
 npm test           # full test suite (plain Node, no framework)
 ```
 
-`npm test` must be green before you open a PR. CI runs it on Node 18, 20 and 22.
+`npm test` must be green before you open a PR. CI runs it on Node 20 and 22.
 
 ## The hard constraints
 

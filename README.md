@@ -61,7 +61,7 @@ approach and deliberate non-goals — see **[ARCHITECTURE.md](ARCHITECTURE.md)**
 
 ## Requirements
 
-- **Node.js ≥ 18** (developed and tested on 18, 20 and 22).
+- **Node.js ≥ 20** (developed and tested on 20 and 22; Node 18 is end-of-life).
 - `better-sqlite3` is a native module. Prebuilt binaries cover mainstream
   platforms (macOS / Linux / Windows on x64 + arm64 for supported Node
   versions), so `npm install` usually just works. On an unsupported
@@ -152,8 +152,8 @@ npm test          # ≈1800 assertions, plain Node scripts, no test framework
 
 The suite is a homegrown runner (`tests/run.js`) over `tests/test-*.js`: pure
 unit tests, storage/mutex/revision tests, in-process and stdio MCP round-trips,
-JSDOM renderer tests, and a real-server end-to-end test. CI runs it on Node 18,
-20 and 22. Tests only ever touch temporary directories — running them never
+JSDOM renderer tests, and a real-server end-to-end test. CI runs it on Node 20
+and 22. Tests only ever touch temporary directories — running them never
 touches your data.
 
 ## License

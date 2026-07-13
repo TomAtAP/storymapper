@@ -25,9 +25,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # engines: node >=18. better-sqlite3 is a NATIVE module, so the
-        # matrix really exercises its prebuild/compile across versions.
-        node-version: [ '18', '20', '22' ]
+        # engines: node >=20 (Node 18 is EOL, and the jsdom test dependency
+        # needs require(ESM) support which only landed in Node 20.19 / 22.12).
+        # better-sqlite3 is a NATIVE module, so the matrix really exercises its
+        # prebuild/compile across versions.
+        node-version: [ '20', '22' ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -300,7 +300,7 @@ prompt and a long-poll.
 
 - **Plain Node scripts.** `tests/test-*.js` with a tiny `test(name, fn)` helper;
   `tests/run.js` loads them sequentially. No mocha/jest/vitest. `jsdom` in tests
-  only. Run with `npm test` (≈1800 assertions); CI runs it on Node 18/20/22.
+  only. Run with `npm test` (≈1800 assertions); CI runs it on Node 20 and 22.
 - **Layered coverage:** pure ops + normalize + workflow/governance;
   storage atomicity/mutex/revisions; validation gates; REST + WebSocket
   live-sync; MCP tools both in-process (`reg.handler`) **and** via a stdio
