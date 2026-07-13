@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ticket Editor · Story Mapper</title>
+  <link rel="stylesheet" href="./css/storymap.css">
+</head>
+<body class="te-page">
+  <!-- Full-page ticket editor (Epic B / B2, SM-117). Bookmarkable at
+       /editor?projectId=&ticketId= — loads the project into a ProjectStore and
+       renders the one ticket type-aware with the SHARED ticket-form builders.
+       Content-first layout lands in B3; in-place persistence in B5. -->
+  <main id="editor-host" class="te-host"></main>
+  <div id="modal-host"></div>
+
+  <!-- Module load order: core → store → adapters → ui-shell → dnd →
+       ticket-form (shared builders) → renderer-ticket-editor. -->
+  <script defer src="./js/core.js"></script>
+  <script defer src="./js/store.js"></script>
+  <script defer src="./js/save-pipeline.js"></script>
+  <script defer src="./js/adapters.js"></script>
+  <script defer src="./js/ui-shell.js"></script>
+  <script defer src="./js/dnd.js"></script>
+  <script defer src="./js/ticket-form.js"></script>
+  <script defer src="./js/renderer-ticket-editor.js"></script>
+  <script defer src="./js/ticket-editor-boot.js"></script>
+</body>
+</html>

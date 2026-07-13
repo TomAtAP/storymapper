@@ -1,0 +1,54 @@
+name: tests
+
+# SM-225: run the full test suite on every push to main + every PR.
+# The suite (tests/run.js) is exit-code-clean and has no inter-file
+# dependencies; the subprocess tests (test-shutdown / test-mcp-stdio /
+# test-e2e) spawn real Node processes, bind ephemeral ports (port 0) and
+# send signals — all CI-safe on ubuntu-latest.
+#
+# KNOWN FLAKE: the SIGINT-shutdown timing assert in test-shutdown.js
+# ("shutdown < 2s") can occasionally fail under full-suite load; it passes
+# 4/4 in isolation. If a real CI run shows it flaking, the fix is a
+# CI-tolerant timeout via an env factor (e.g. STORYMAP_TEST_TIMEOUT_FACTOR)
+# — NOT weakening the assertion (SM-225 AC5).
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # engines: node >=18. better-sqlite3 is a NATIVE module, so the
+        # matrix really exercises its prebuild/compile across versions.
+        node-version: [ '18', '20', '22' ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: node tests/run.js
+
+  audit:
+    name: npm audit (block on high+)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      # Non-blocking on moderate (a known moderate transitively via the MCP
+      # SDK's `hono` is tracked in SM-224); blocking on high/critical.
+      - name: npm audit
+        run: npm audit --omit=dev --audit-level=high

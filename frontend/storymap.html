@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Story Mapper</title>
+  <link rel="stylesheet" href="./css/storymap.css">
+</head>
+<body>
+  <header class="app-header">
+    <!-- Row 1: Brand + Menu-Bar + Current-Project-Indicator. Menus only. -->
+    <div class="toolbar toolbar-menu">
+      <span class="brand"><b>Story</b><em>Mapper</em></span>
+      <div class="sep" aria-hidden="true"></div>
+      <div id="menu-bar" class="menu-bar"></div>
+      <div class="toolbar-spacer"></div>
+      <span id="current-project" class="current-project" title="Open project"></span>
+    </div>
+    <!-- Row 2: Search + Filter. View switching lives in the View menu (SM-205);
+         every other action moved to the menus per E22. -->
+    <div class="toolbar toolbar-action">
+      <div class="toolbar-spacer"></div>
+      <input id="ticket-search" class="ticket-search" type="search"
+             placeholder="Search… or a query: status = ready AND type = bug"
+             aria-label="Search or query tickets" autocomplete="off" spellcheck="false">
+      <span id="smartbar-status" class="smartbar-status" aria-live="polite"></span>
+      <button id="btn-filter" class="filter-btn" title="Filter tickets" aria-haspopup="true" aria-expanded="false">
+        <span class="filter-btn-label">Filter</span>
+        <span id="filter-badge" class="filter-badge" hidden>0</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="view-host">
+      <div id="story-map-host"></div>
+      <div id="kanban-host" hidden></div>
+      <div id="deps-host" hidden></div>
+      <div id="requirements-view-host" hidden></div>
+      <div id="process-steps-host" hidden></div>
+      <div id="table-host" hidden></div>
+    </section>
+    <!-- E23.B — Settings as overlay over Map/Kanban (not a third view). -->
+    <div id="settings-host" class="vs-overlay" hidden role="dialog" aria-label="Project settings"></div>
+  </main>
+
+  <footer class="statusbar">
+    <span id="adapter-badge" class="badge" title="Active storage backend"></span>
+    <span id="build-tag" class="build-tag" title="Loaded build (Git-Commit, kurz)"></span>
+    <span class="statusbar-spacer"></span>
+  </footer>
+
+  <!-- Single modal host (cmapper-Pattern): at most one modal at a time. -->
+  <div id="modal-host"></div>
+
+  <!-- Module load order: core → store → adapters → ui-shell → renderer-storymap → renderer-ticket-modal → main.
+       Kanban-Renderer folgt in E11. -->
+  <script defer src="./js/core.js"></script>
+  <script defer src="./js/core/graph.js"></script>
+  <script defer src="./js/store.js"></script>
+  <script defer src="./js/save-pipeline.js"></script>
+  <script defer src="./js/adapters.js"></script>
+  <script defer src="./js/ui-shell.js"></script>
+  <script defer src="./js/dnd.js"></script>
+  <script defer src="./js/wheel-pan.js"></script>
+  <script defer src="./js/card-animate.js"></script>
+  <script defer src="./js/renderer-card.js"></script>
+  <script defer src="./js/filter.js"></script>
+  <script defer src="./js/query.js"></script>
+  <script defer src="./js/query-engine.js"></script>
+  <script defer src="./js/query-autocomplete.js"></script>
+  <script defer src="./js/smartbar-autocomplete.js"></script>
+  <script defer src="./js/renderer-storymap.js"></script>
+  <script defer src="./js/renderer-kanban.js"></script>
+  <script defer src="./js/renderer-dependencies.js"></script>
+  <script defer src="./js/ticket-form.js"></script>
+  <script defer src="./js/renderer-ticket-modal.js"></script>
+  <script defer src="./js/view-settings.js"></script>
+  <script defer src="./js/view-requirements.js"></script>
+  <script defer src="./js/view-process-steps.js"></script>
+  <script defer src="./js/view-table.js"></script>
+  <script defer src="./js/ticket-import.js"></script>
+  <script defer src="./js/project-io.js"></script>
+  <script defer src="./js/dialog-ticket-import.js"></script>
+  <script defer src="./js/main.js"></script>
+</body>
+</html>

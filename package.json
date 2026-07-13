@@ -1,0 +1,67 @@
+{
+  "name": "storymapper",
+  "version": "0.1.0",
+  "description": "User Story Map + Kanban board with a live HTTP/WebSocket UI and an MCP server, so AI agents and humans plan the same backlog together.",
+  "keywords": [
+    "story-map",
+    "user-story-map",
+    "kanban",
+    "agile",
+    "backlog",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "ai-agent",
+    "sqlite",
+    "project-planning"
+  ],
+  "author": "Thomas Schwenger",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TomAtAP/storymapper.git"
+  },
+  "homepage": "https://github.com/TomAtAP/storymapper#readme",
+  "bugs": {
+    "url": "https://github.com/TomAtAP/storymapper/issues"
+  },
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js server",
+    "mcp": "node server/index.js mcp",
+    "test": "node tests/run.js",
+    "walkthrough": "node tests/mcp-walkthrough.js",
+    "anim-walkthrough": "node tests/mcp-animation-walkthrough.js",
+    "prd-demo": "node tests/mcp-prd-slicing-demo.js",
+    "query-demo": "node tests/mcp-query-demo.js",
+    "perf": "node tests/perf-baseline.js"
+  },
+  "bin": {
+    "storymapper": "./server/index.js"
+  },
+  "files": [
+    "server/",
+    "shared/",
+    "frontend/",
+    "skill/",
+    "README.md",
+    "ARCHITECTURE.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "better-sqlite3": "^11.5.0",
+    "fflate": "0.8.3",
+    "pdf2json": "4.0.3",
+    "ws": "^8.18.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,4636 @@
+/* Storymapper — paperlike theme.
+ *
+ * The CSS tokens and the modal/menu/button geometry are shared with the
+ * companion Concept Mapper project so the two tools look identical. Keep the
+ * design language in sync when changing anything here.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Mona+Sans:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --paper:        #F5F1EA;
+  --paper-warm:   #EDE7DA;
+  --ink:          #1A1A1A;
+  --ink-soft:     #717071;
+  --ink-faint:    #B3B0AD;
+  --rule:         #DAD7D1;
+  --rule-soft:    #E8E5DE;
+  --accent:       #0F5F4F;
+  --danger:       #B0382B;
+  --danger-hover: #8E2C20;
+  --selection:    rgba(15,95,79,0.22);
+  --target:       #2E5A52;
+  /* SM-257 — Story-Map "backbone spine": the process-step header is a dark
+     accent band so it reads distinctly from the warm-paper release band.
+     The heavy colour appears once (sticky top); release bands stay quiet. */
+  --backbone-bg:          #4C8170;                /* lighter muted green-slate */
+  --backbone-edge:        #3C6856;                /* darker, bottom rule */
+  --backbone-ink:         var(--paper);           /* light label text */
+  --backbone-ink-soft:    rgba(245,241,234,0.62); /* grip / empty / secondary */
+  --backbone-divider:     rgba(245,241,234,0.18); /* column separators */
+  --backbone-lift:        rgba(245,241,234,0.10); /* hover tint */
+  --backbone-lift-strong: rgba(245,241,234,0.20); /* drop-target tint */
+  --shadow-lift:  0 2px 4px rgba(26,26,26,0.06), 0 8px 24px rgba(26,26,26,0.06);
+  --font-display: 'Libre Caslon Text', Georgia, serif;
+  --font-body:    'Mona Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Cluster-Palette 1:1 aus cmapper (concept_map.html#CLUSTERS).
+     Verwendet für ticket-typ-spezifische Karten-Hintergründe. */
+  --cluster-blue-fill:    #E8EEF5;
+  --cluster-blue-border:  #2E4665;
+  --cluster-blue-ink:     #1A2A40;
+  --cluster-green-fill:   #E7EDE3;
+  --cluster-green-border: #3D5639;
+  --cluster-green-ink:    #22341F;
+  --cluster-amber-fill:   #F5ECD8;
+  --cluster-amber-border: #7A5A1F;
+  --cluster-amber-ink:    #3F2F11;
+  --cluster-rust-fill:    #F1DCD2;
+  --cluster-rust-border:  #7A3E26;
+  --cluster-rust-ink:     #3F1E12;
+  --cluster-plum-fill:    #EAE0EA;
+  --cluster-plum-border:  #5A3957;
+  --cluster-plum-ink:     #2E1B2D;
+  --cluster-slate-fill:   #E5E5E2;
+  --cluster-slate-border: #3A3A37;
+  --cluster-slate-ink:    #1A1A18;
+  --cluster-teal-fill:    #DCE9E7;
+  --cluster-teal-border:  #2E5A52;
+  --cluster-teal-ink:     #152C28;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  /* Global default: deny text selection. The HTML chrome (toolbar, lanes,
+     cards, modal headers, drag-handles) shouldn't be selectable — and most
+     importantly drag-reorder shouldn't paint a text selection across rows
+     while the pointer moves. Elements that DO want selection opt in via
+     the whitelist below or via `.selectable`. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Form controls + things the user authors text into stay selectable.
+   `[contenteditable]` covers rich-text fields (none today, future-proof);
+   `pre`/`code` cover snippets the user wants to copy out; `.selectable`
+   is the explicit opt-in escape hatch for any other content. */
+input,
+textarea,
+select,
+[contenteditable="true"],
+pre,
+code,
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+}
+::selection { background: var(--accent); color: var(--paper); }
+
+/* ---------- App-Header (zwei Toolbar-Zeilen) ----------
+   Row 1 (.toolbar-menu): Brand + Menü + aktuelles Projekt (rechts).
+   Row 2 (.toolbar-action): Create-Buttons + View-Toggle (rechts).
+   cmapper-Pattern: Menüs oben, Aktionen unten, klar getrennt. */
+.app-header {
+  display: flex; flex-direction: column;
+  background: var(--paper-warm);
+  border-bottom: 1px solid var(--rule);
+  position: sticky; top: 0; z-index: 10;
+}
+.app-header .toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px;
+}
+.app-header .toolbar-menu   { padding-bottom: 4px; }
+.app-header .toolbar-action {
+  padding-top: 4px;
+  border-top: 1px solid var(--rule);
+}
+/* Current-Project anchor rechts in Row 1 (klickbar, öffnet Load-Dialog). */
+.current-project {
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  transition: background 100ms, border-color 100ms;
+}
+.current-project:hover {
+  background: var(--paper);
+  border-color: var(--rule);
+  color: var(--ink);
+}
+.current-project:empty { display: none; }
+/* Brand — 1:1 aus cmapper: <span class="brand"><b>X</b><em>Y</em></span> */
+.brand {
+  font-family: var(--font-body);
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  margin-right: 4px;
+  color: var(--ink);
+}
+.brand b  { color: var(--accent); font-weight: 900; font-style: normal; }
+.brand em { font-style: normal;   font-weight: 400; color: var(--ink); }
+.toolbar-spacer { flex: 1; }
+.sep {
+  display: inline-block;
+  width: 1px; height: 22px;
+  background: var(--rule);
+  margin: 0 4px;
+}
+.app-toolbar {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+
+/* Legacy alias for old .toolbar selectors used by other code paths. */
+.toolbar { display: flex; align-items: center; gap: 8px; }
+
+/* ---------- Buttons (1:1 cmapper) ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: var(--ink);
+  font: inherit; font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+  white-space: nowrap;
+}
+.btn:hover:not(:disabled) { background: var(--paper-warm); border-color: var(--ink-faint); }
+.btn:disabled { opacity: 0.35; cursor: default; }
+.btn:disabled:hover { background: transparent; border-color: var(--rule); }
+.btn.active   { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn.primary  { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn.primary:hover:not(:disabled) { background: var(--ink-soft); border-color: var(--ink-soft); }
+.btn.destructive {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #FFFFFF;
+}
+.btn.destructive:hover:not(:disabled) {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+/* SM-244: Cancel-ticket action — SOLID amber (filled like the red Delete, but
+   warning-yellow not danger-red). Dark ink text reads with high contrast on
+   amber (~9:1), clearly more visible than an outline button. */
+.btn.warn {
+  background: #F59E0B;
+  border-color: #F59E0B;
+  color: #1A1A1A;
+  font-weight: 600;
+}
+.btn.warn:hover:not(:disabled) {
+  background: #D97706;
+  border-color: #D97706;
+  color: #1A1A1A;
+}
+
+/* Native form controls match the paperlike palette */
+select, input[type="text"], input[type="number"], input[type="password"], textarea {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 12px;
+}
+select { min-width: 160px; }
+select:focus, input:focus, textarea:focus { outline: none; border-color: var(--ink); }
+
+.badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+/* Build-Tag neben dem Brand — zeigt git-Commit + Subject als Tooltip.
+   Bei jeder Code-Änderung sichtbar im UI, sodass "ich sehe die neue
+   Version nicht"-Verwirrungen sich in 1 Sekunde klären lassen. */
+.build-tag {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 10px;
+  color: var(--ink-faint);
+  padding: 2px 6px;
+  background: var(--rule-soft);
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+  cursor: help;
+  user-select: all;
+}
+
+/* ---------- Main / View host ---------- */
+/* App-Grid: header (auto) | main (1fr) | statusbar (auto). */
+body {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+}
+main {
+  display: grid;
+  grid-template-columns: 1fr 0;
+  transition: grid-template-columns 0.18s ease;
+  overflow: hidden;
+}
+main.sidebar-open { grid-template-columns: 1fr 360px; }
+/* Scroll-Container: KEIN padding-top (sticky Backbone klebt direkt an
+   die Toolbar) und KEIN seitliches padding — sonst weichen die Spalten
+   der Backbone von den Release-Cells ab (das Grid `auto-fit` der beiden
+   Container produziert dann unterschiedliche Breiten). Inhalt erhält
+   seine Atem-Räume über die jeweiligen inneren Paddings: `.sm-cell`
+   intern 10px, Kanban-Board separates Side-Padding für Lanes. */
+#view-host { overflow: auto; padding: 0 0 16px; }
+/* SM-281 (Wiedergänger von SM-280, diesmal mit korrekter Diagnose): macOS-
+   Overlay-Scrollbalken erscheinen NUR für die gerade gescrollte Achse. Eine
+   Maus mit rein vertikalem Scrollrad erzeugt nie ein horizontales Delta —
+   der horizontale Balken taucht also nie auf und ist auch nicht greifbar;
+   Process-Steps rechts außerhalb des Viewports sind dann unerreichbar.
+   ::-webkit-scrollbar-Styling opt-out't aus dem Overlay → dauerhaft sicht-
+   und greifbare klassische Balken (Safari/Chrome). Bewusst schlanker als der
+   revertierte SM-280-Wurf (10px, zarter Thumb, transparenter Track), damit
+   es nicht "heavy und un-Safari-like" wirkt. Ergänzend übersetzt
+   js/wheel-pan.js Shift+Scrollrad in horizontales Scrollen. */
+#view-host::-webkit-scrollbar { width: 10px; height: 10px; }
+#view-host::-webkit-scrollbar-thumb {
+  background: rgba(26, 26, 26, 0.22);
+  border-radius: 5px;
+  border: 2px solid var(--paper);
+}
+#view-host::-webkit-scrollbar-thumb:hover { background: rgba(26, 26, 26, 0.42); }
+#view-host::-webkit-scrollbar-track { background: transparent; }
+#view-host::-webkit-scrollbar-corner { background: transparent; }
+#sidebar-host {
+  overflow: auto;
+  border-left: 1px solid var(--rule);
+  background: var(--paper);
+  padding: 16px;
+}
+
+/* ---------- Statusbar (am Boden, fixiert) ---------- */
+.statusbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 16px;
+  border-top: 1px solid var(--rule);
+  background: var(--paper-warm);
+  font-size: 11px;
+  color: var(--ink-soft);
+  min-height: 24px;
+}
+.statusbar-spacer { flex: 1; }
+
+/* ---------- Empty state ---------- */
+.empty-state {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 20px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+.empty-state h2 {
+  margin: 0 0 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.empty-state p { margin: 0 0 16px; max-width: 480px; }
+
+/* ============================================================
+   UI-Shell — Modal, Popover, Menu, Flash (1:1 cmapper)
+   ============================================================ */
+
+/* Single host that contains at most one modal at a time. */
+#modal-host { position: relative; z-index: 100; }
+
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,26,26,0.35);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.modal {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: var(--shadow-lift);
+  padding: 22px 24px;
+  width: 580px; max-width: 92vw; max-height: 85vh;
+  display: flex; flex-direction: column;
+}
+.modal h2, .modal .modal-title {
+  font-family: var(--font-display);
+  font-size: 20px; font-weight: 700;
+  margin: 0 0 4px 0; letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.modal .modal-sub {
+  font-size: 12px; color: var(--ink-soft);
+  margin-bottom: 14px; line-height: 1.5;
+}
+.modal .modal-body { display: flex; flex-direction: column; }
+.modal textarea {
+  flex: 1; min-height: 80px; width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 12px;
+  background: #FFFFFF;
+  font-family: var(--font-body);
+  font-size: 11px; color: var(--ink-soft);
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  resize: vertical;
+}
+.modal textarea:focus { outline: none; border-color: var(--ink); }
+.modal-actions {
+  display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;
+}
+
+/* Generic form row used inside modals (label + control). */
+.modal-row {
+  display: flex; align-items: center; gap: 8px;
+  margin: 8px 0;
+}
+.modal-row label {
+  flex: 0 0 140px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.modal-row input[type="text"],
+.modal-row input[type="number"],
+.modal-row input[type="password"],
+.modal-row select,
+.modal-row textarea {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  font: inherit; font-size: 12px;
+  color: var(--ink);
+}
+.modal-row textarea { min-height: 60px; resize: vertical; }
+.modal-row .row-hint {
+  flex: 0 0 100%;
+  margin-left: 148px;
+  font-size: 11px; color: var(--ink-faint);
+  margin-top: 2px;
+}
+
+/* DoR/DoD-Gate-Fehler-Liste in Modals */
+.missing-list {
+  list-style: none; margin: 8px 0 0; padding: 8px 12px;
+  background: rgba(176,56,43,0.08);
+  border-left: 3px solid var(--danger);
+  border-radius: 4px;
+  font-size: 12px;
+}
+.missing-list li { padding: 2px 0; color: var(--ink); }
+.missing-list li::before { content: "○ "; color: var(--danger); }
+
+/* ---------- Context menu (SM-30) ---------- */
+.context-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 180px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: var(--shadow-lift);
+  padding: 4px 0;
+}
+.context-menu-list { display: flex; flex-direction: column; }
+.context-menu-item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: inherit;
+}
+.context-menu-item:hover { background: var(--accent-soft); color: var(--ink); }
+.context-menu-item-disabled {
+  cursor: not-allowed;
+  color: var(--ink-soft);
+}
+.context-menu-item-disabled:hover { background: transparent; }
+
+/* ---------- Settings popover (anchored) ---------- */
+.settings-popover {
+  position: fixed;
+  z-index: 50;
+  min-width: 240px;
+  max-width: min(360px, 92vw);
+  padding: 12px 14px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: var(--shadow-lift);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sp-title {
+  font-size: 13px; font-weight: 600;
+  color: var(--ink);
+}
+.sp-row {
+  display: grid;
+  grid-template-columns: 96px 1fr 56px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.sp-row label { color: var(--ink-soft); }
+.sp-row input[type="range"] { accent-color: var(--accent); }
+.sp-out {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ink);
+}
+.sp-hint { font-size: 11px; color: var(--ink-faint); line-height: 1.45; }
+.sp-footer { display: flex; justify-content: flex-end; }
+.sp-reset {
+  background: none; border: none;
+  color: var(--accent);
+  font: inherit; cursor: pointer;
+  padding: 2px 4px;
+}
+.sp-reset:hover { text-decoration: underline; }
+
+/* ---------- Menu Bar (1:1 cmapper) ---------- */
+.menu-bar {
+  display: inline-flex; align-items: center; gap: 2px;
+}
+.menu-item {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+  line-height: 1.2;
+  user-select: none;
+  transition: background 100ms, border-color 100ms;
+}
+.menu-item:hover { background: var(--paper-warm); border-color: var(--rule); }
+.menu-item.open {
+  background: var(--ink); color: var(--paper); border-color: var(--ink);
+}
+.menu-dropdown {
+  position: fixed;
+  z-index: 70;
+  min-width: 220px;
+  padding: 4px 0;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: var(--shadow-lift);
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--ink);
+}
+.menu-dropdown-item {
+  /* SM-205: [check gutter | label | shortcut] grid so labels share one column
+     and the active item's ✓ sits in the gutter (not inline with the text). */
+  display: grid;
+  grid-template-columns: 11px 1fr auto;
+  align-items: center;
+  column-gap: 5px;
+  padding: 6px 14px 6px 9px;
+  cursor: pointer;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  line-height: 1.3;
+}
+.menu-dropdown-item:hover:not(.disabled) { background: var(--paper-warm); }
+.menu-dropdown-item.disabled {
+  color: var(--ink-faint);
+  cursor: default;
+  background: transparent;
+}
+.menu-dropdown-item .menu-check {
+  width: 11px; text-align: center; color: var(--accent);
+  font-size: 11px; line-height: 1;
+}
+.menu-dropdown-item .menu-label { white-space: nowrap; }
+.menu-dropdown-item .menu-shortcut {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.menu-dropdown-separator {
+  height: 1px;
+  background: var(--rule);
+  margin: 4px 6px;
+}
+
+/* ---------- Flash status (bottom-left toast) ---------- */
+.flash {
+  position: fixed;
+  bottom: 16px; left: 16px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  box-shadow: var(--shadow-lift);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 80;
+  animation: flashIn 140ms ease-out;
+}
+@keyframes flashIn { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.flash-error { background: var(--danger); color: #FFFFFF; }
+.flash-ok    { background: var(--accent); color: #FFFFFF; }
+.flash-spinner {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   Story-Map (E9c) — 3-Ebenen: ProcessSteps × Releases → Epics → Stories
+   ============================================================
+   CSS-Variablen --sm-* werden vom Renderer aus STORY_MAP_LAYOUT gesetzt,
+   damit Werte zentral aus JS gepflegt werden können. */
+
+.sm-grid {
+  /* SM-257 Safari fix: block flow, NOT flex-column. The children are
+     full-width rows that simply stack, so block is visually identical to a
+     gap:0 flex column in Chrome — but it removes the "sticky element is a
+     flex item" condition, which Safari renders incorrectly (the sticky
+     .sm-backbone flex child inside this width:max-content parent silently
+     fails to paint / position). A plain sticky block child is the
+     best-supported sticky scenario across engines. */
+  display: block;
+  /* SM-55 follow-up: make the grid container as wide as its widest child
+     (the cells-row with explicit pixel grid-columns summing past the
+     viewport). Without this, label-rows + the sm-backbone background paint
+     only up to the viewport edge — when the user scrolls horizontally to
+     reveal off-screen process steps, the background ends where the viewport
+     ended, not at the actual column width. `min-width: 100%` keeps the
+     grid filling the viewport when content is narrower. */
+  width: max-content;
+  min-width: 100%;
+  --sm-backbone-col-w: 240px;
+}
+
+/* ---------- Feature-Backbone (sticky top) ----------
+   grid-template-columns wird vom Renderer inline gesetzt: pro PS-Spalte
+   eine eigene Breite = calc(multiplier * var(--sm-backbone-col-w)).
+   Hier nur ein sinnvoller Fallback, falls Inline-Style fehlt. */
+.sm-backbone {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--sm-backbone-col-w), 1fr));
+  background: #4C8170;                 /* literal fallback — paints even if a
+                                          browser stumbles on the custom prop */
+  background: var(--backbone-bg);
+  border-bottom: 2px solid var(--backbone-edge);
+  position: sticky; top: 0; z-index: 2;
+}
+.sm-backbone-col {
+  padding: 10px 12px;
+  font-size: 13px; font-weight: 600;
+  color: var(--backbone-ink);
+  letter-spacing: -0.01em;
+  border-right: 1px solid var(--backbone-divider);
+  text-align: center;
+  cursor: grab;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background 120ms, box-shadow 120ms;
+}
+.sm-backbone-col:hover { background: var(--backbone-lift); }
+.sm-backbone-col.sm-dragging { opacity: 0.4; cursor: grabbing; }
+.sm-backbone-col.sm-col-drop-target {
+  background: var(--backbone-lift-strong);
+  box-shadow: inset 3px 0 0 var(--paper);
+}
+.sm-backbone-col.sm-col-shadow {
+  opacity: 0.45;
+  background: var(--backbone-lift);
+  outline: 1px dashed var(--paper);
+  outline-offset: -2px;
+}
+.sm-col-grip {
+  color: var(--backbone-ink-soft);
+  font-size: 11px;
+  letter-spacing: -2px;
+  cursor: grab;
+  user-select: none;
+}
+.sm-col-label { /* keeps label naming explicit */ }
+/* SM-272: process-step column collapse — chevron + narrow collapsed column. */
+.sm-col-chevron {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--backbone-ink-soft);
+  cursor: pointer;
+  font-size: 9px;
+  line-height: 1;
+  padding: 2px 1px;
+  flex: 0 0 auto;
+}
+.sm-col-chevron:hover { color: var(--backbone-ink); }
+.sm-backbone-col.sm-col-collapsed {
+  padding: 10px 3px;
+  gap: 2px;
+}
+.sm-backbone-col.sm-col-collapsed .sm-col-grip { display: none; }
+.sm-backbone-col.sm-col-collapsed .sm-col-label {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+}
+.sm-cell.sm-cell-collapsed {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8px 4px;
+}
+.sm-cell-collapsed-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft, #717071);
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.sm-backbone-col.sm-empty {
+  font-size: 12px;
+  color: var(--backbone-ink-soft);
+  font-weight: normal;
+  font-style: italic;
+  cursor: default;
+}
+.sm-backbone-col.sm-empty:hover { background: transparent; }
+
+/* Add-Column-Dropzone am rechten Rand des Backbones — Klick = neuer
+   ProcessStep, Drop von Epic = neuer ProcessStep + Epic-Move atomic. */
+.sm-backbone-col.sm-add-col {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: transparent;
+  color: var(--backbone-ink-soft);
+  font-weight: 500;
+  font-size: 12px;
+  cursor: pointer;
+  border-left: 1px dashed var(--backbone-divider);
+  border-right: none;
+  min-width: 120px;
+  transition: background 120ms, color 120ms, box-shadow 120ms;
+}
+.sm-backbone-col.sm-add-col:hover {
+  background: var(--backbone-lift);
+  color: var(--backbone-ink);
+}
+.sm-backbone-col.sm-add-col .sm-add-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  background: var(--backbone-lift-strong);
+  color: var(--backbone-ink);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.sm-backbone-col.sm-add-col:hover .sm-add-icon { background: var(--paper); color: var(--accent); }
+.sm-backbone-col.sm-add-col.sm-drop-target {
+  background: var(--backbone-lift-strong);
+  color: var(--backbone-ink);
+  box-shadow: inset 0 0 0 3px var(--paper);
+}
+.sm-backbone-col.sm-add-col.sm-drop-target .sm-add-icon { background: var(--paper); color: var(--accent); }
+
+/* ---------- Release-Cells-Zeile ----------
+   grid-template-columns: inline vom Renderer (eine Spalte pro PS, plus
+   auto-Filler für den Add-Step-Slot der Backbone). Kein Release-Label-
+   Slot mehr — das Label sitzt in der Zeile darunter. */
+.sm-release-row.sm-release-cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--sm-backbone-col-w), 1fr));
+  min-height: 120px;
+  background: var(--paper);
+}
+.sm-row-filler {
+  background: transparent;
+}
+
+/* ---------- Release-Label-Zeile (unter den Cells) ---------- */
+.sm-release-label-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: var(--paper-warm);
+  border-top: 1px solid var(--rule);
+  border-bottom: 2px solid var(--rule);   /* visuelle Trennung zwischen Releases */
+}
+/* SM-178: the chevron + name + pill cluster. In the Story-Map it sticks to the
+   left edge so it stays visible while scrolling horizontally through wide
+   process steps (orientation). The Kanban swimlane header uses the same DOM
+   but does NOT pin it — the sticky rule is scoped to `.sm-grid`. */
+.sm-release-label-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.sm-grid .sm-release-label-main {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--paper-warm);
+  /* paint a little to the right so the pinned cluster reads cleanly over the
+     row content scrolling underneath it */
+  padding-right: 8px;
+  border-radius: 0 4px 4px 0;
+}
+.sm-release-label {
+  font-size: 13px; font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 120ms;
+  /* SM-277: fixed title column so the progress/pill/Add badges line up in stable
+     columns across every release row instead of fluttering with the title
+     length. Longer titles truncate with an ellipsis (full name in the tooltip).
+     --sm-release-label-w comes from RELEASE_LABEL_WIDTH_PX (set on .sm-grid). */
+  flex: 0 0 var(--sm-release-label-w, 300px);
+  max-width: var(--sm-release-label-w, 300px);
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sm-release-label:hover { background: var(--paper); }
+
+/* SM-80 — Release-Lifecycle visual markers. Completed and cancelled
+   releases get a dimmed style + status pill so they're recognisable
+   without the filter being active. */
+.sm-release-label[data-status="completed"],
+.sm-release-label[data-status="cancelled"] {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-faint);
+  text-decoration-thickness: 1px;
+}
+.sm-release-cells[data-status="completed"],
+.sm-release-cells[data-status="cancelled"] {
+  opacity: 0.55;
+  filter: saturate(0.7);
+}
+/* SM-83: scope the hover-restore so it does NOT fight the collapsed-cells
+   opacity:0 (which would reveal content when the user hovers over the
+   collapsed row's box). */
+.sm-release-cells[data-status="completed"]:not(.sm-release-collapsed-cells):hover,
+.sm-release-cells[data-status="cancelled"]:not(.sm-release-collapsed-cells):hover { opacity: 0.85; }
+.sm-release-pill {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 9px;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  line-height: 16px;
+}
+.sm-release-pill-completed {
+  background: var(--accent-soft, rgba(15, 95, 79, 0.16));
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.sm-release-pill-cancelled {
+  background: rgba(180, 60, 60, 0.12);
+  color: var(--danger, #B43C3C);
+  border: 1px solid var(--danger, #B43C3C);
+}
+
+/* SM-239 — release progress badge "X/Y". Neutral by default; turns green
+   (accent) when every work item is done. Shared by the Story-Map release
+   label rows AND the Kanban swimlane headers (one renderReleaseLabelRow). */
+.sm-release-progress {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 9px;
+  font-size: 11px; font-weight: 700;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  background: var(--ink-soft-bg, rgba(0, 0, 0, 0.06));
+  color: var(--ink-soft, #717071);
+  border: 1px solid transparent;
+  /* SM-277: fixed min-width + centered so "8/9" and "10/10" occupy the same
+     slot — the status pill after it doesn't shift when the count changes. */
+  min-width: 44px;
+  box-sizing: border-box;
+  text-align: center;
+}
+.sm-release-progress.complete {
+  background: var(--accent-soft, rgba(15, 95, 79, 0.16));
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* SM-83 — Collapsible release rows. Chevron sits at the start of the
+   label row; toggling collapses the cells-row (animated via max-height)
+   and visually compacts the label row so closed releases take less
+   vertical space. */
+.sm-release-chevron {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  /* Larger size — at 12px the ▾/▸ glyphs read as dots. ▼/▶ at 14px is
+     unambiguous as a disclosure triangle. */
+  font-size: 14px;
+  line-height: 1;
+  padding: 3px 8px;
+  min-width: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.sm-release-chevron:hover {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--rule);
+}
+.sm-release-label-row.sm-release-collapsed {
+  padding: 2px 12px;        /* tighter vertical when collapsed */
+  border-bottom-width: 1px; /* the heavy 2px separator only fits expanded */
+}
+.sm-release-label-row.sm-release-collapsed .sm-release-label {
+  font-size: 12px;
+  padding: 2px 8px;
+}
+/* Animated collapse: the cells-row stays in the DOM and animates via
+   max-height + opacity + padding + border-width. main.js owns the
+   inline max-height — it sets scrollHeight → 0 on collapse and
+   0 → scrollHeight on expand, then clears the inline value after
+   transitionend so future content growth isn't clipped. We deliberately
+   do NOT set max-height in the .sm-release-collapsed-cells class
+   (especially not !important) — that would clobber the inline start
+   value and Safari would skip the transition entirely. overflow:hidden
+   is permanent on the row so the animation looks clean on either edge. */
+.sm-release-cells {
+  overflow: hidden;
+  transition:
+    max-height 240ms ease,
+    opacity     200ms ease,
+    padding     240ms ease,
+    border-top-width    240ms ease,
+    border-bottom-width 240ms ease;
+}
+.sm-release-cells.sm-release-collapsed-cells {
+  opacity: 0;
+  /* .sm-release-row.sm-release-cells has min-height:120px so an empty
+     cells-row still shows a sensible drop-target. When collapsed, we
+     need to override that — otherwise max-height:0 has no effect and
+     the row keeps reserving 120px of empty space. */
+  min-height: 0;
+  border-top-width: 0;
+  border-bottom-width: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* "+ Add Release" — Ghost-Variant, nur neben dem letzten Release-Label. */
+.sm-add-release-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px;
+  font: inherit; font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.sm-add-release-btn:hover {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--ink-faint);
+  border-style: solid;
+}
+.sm-add-release-btn .sm-add-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px;
+  background: var(--ink-faint);
+  color: var(--paper);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+.sm-add-release-btn:hover .sm-add-icon { background: var(--accent); }
+
+/* Phantom-Row CTA — zeigt nur den +Add-Button, kein Label dahinter. */
+.sm-release-label-row.sm-phantom-label-row {
+  border-top: none;
+  justify-content: flex-start;
+}
+
+/* ---------- Cell pro (Release × ProcessStep) ---------- */
+/* SM-55 follow-up: cell padding shrunk 10 → 4px each side so the cell's
+   content area equals exactly BACKBONE_COL_WIDTH_PX − 2×4 = 240px =
+   STORY_CARD_WIDTH_PX. Means a 1-sub-col Epic-card fits flush into a
+   1-sub-col cell with 4px breathing room on each side. */
+.sm-cell {
+  background: var(--paper);
+  padding: 4px;
+  border-right: 1px solid var(--rule);
+  display: flex; flex-direction: column; gap: 8px;
+  /* SM-136: absorb any sub-pixel horizontal overflow of the column-row. Use
+     `clip`, NOT `auto`: `auto` makes every cell a horizontal SCROLL container,
+     so a 1px sub-pixel overflow is enough for Safari to route a horizontal
+     trackpad swipe INTO the cell instead of chaining it to #view-host — the map
+     then can't be scrolled horizontally to reach off-screen process steps
+     (SM-281). `clip` absorbs the same overflow without becoming a scroll
+     container, so the gesture reaches the map. */
+  overflow-x: clip;
+  min-height: 160px;
+  transition: background-color 120ms, box-shadow 120ms;
+  position: relative;
+  box-shadow: inset 0 0 0 1px transparent;
+}
+/* SM-223 (a), gated (SM-274 follow-up): skip layout/paint for cells below the
+   fold — ONLY on very large boards (renderInto adds .sm-grid-virtualized past
+   VIRTUALIZE_TICKET_THRESHOLD). `auto` keeps the last-rendered size once a cell
+   has been on screen; the fallback estimate (backbone column width ×
+   min-height-ish) only matters before first paint. FLIP rect-capture is
+   no-op-safe for 0-rects (E24) and drag hit-testing only targets on-screen
+   cells. Gated because content-visibility makes WebKit/Gecko estimate
+   off-screen cell heights and only settle the grid row height when the cell
+   scrolls into view — a visible height jump on normal boards. */
+.sm-grid-virtualized .sm-cell {
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--sm-backbone-col-w, 248px) auto 300px;
+}
+.sm-cell:nth-of-type(odd)  { background: var(--paper); }
+.sm-cell:nth-of-type(even) { background: #FBF6E8; }   /* spürbar wärmere Streifen */
+.sm-cell:last-child { border-right: none; }
+.sm-cell:hover {
+  background: var(--paper-warm);
+  box-shadow: inset 0 0 0 1px var(--ink-faint);
+}
+.sm-cell.sm-empty {
+  grid-column: 3 / -1;
+  color: var(--ink-faint);
+  font-style: italic;
+  padding: 14px;
+}
+.sm-cell.sm-drop-target {
+  background: rgba(15, 95, 79, 0.16);
+  box-shadow: inset 0 0 0 3px var(--accent);
+}
+.sm-cell.sm-drop-target::after {
+  content: "Drop here";
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  pointer-events: none;
+  background: rgba(15, 95, 79, 0.06);
+}
+
+/* Per-Cell-Add-Button — Ghost-Variant, sticky bottom, prominenter +-Icon */
+.sm-add-ticket {
+  margin-top: auto;            /* sticky bottom of cell */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: stretch;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit; font-size: 11px;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.sm-add-ticket:hover {
+  background: var(--paper-warm);
+  color: var(--ink);
+  border-color: var(--ink-faint);
+  border-style: solid;
+}
+.sm-add-ticket .sm-add-icon {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 14px; height: 14px;
+  background: var(--ink-faint);
+  color: var(--paper);
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+}
+.sm-add-ticket:hover .sm-add-icon {
+  background: var(--accent);
+}
+.sm-add-ticket .sm-add-label { letter-spacing: 0.02em; }
+
+/* ---------- Cluster-Klassen (paperlike, 1:1 aus cmapper) ----------- */
+.sm-cluster-blue   { background: var(--cluster-blue-fill);   border-color: var(--cluster-blue-border);   color: var(--cluster-blue-ink); }
+.sm-cluster-green  { background: var(--cluster-green-fill);  border-color: var(--cluster-green-border);  color: var(--cluster-green-ink); }
+.sm-cluster-amber  { background: var(--cluster-amber-fill);  border-color: var(--cluster-amber-border);  color: var(--cluster-amber-ink); }
+.sm-cluster-rust   { background: var(--cluster-rust-fill);   border-color: var(--cluster-rust-border);   color: var(--cluster-rust-ink); }
+.sm-cluster-plum   { background: var(--cluster-plum-fill);   border-color: var(--cluster-plum-border);   color: var(--cluster-plum-ink); }
+.sm-cluster-slate  { background: var(--cluster-slate-fill);  border-color: var(--cluster-slate-border);  color: var(--cluster-slate-ink); }
+.sm-cluster-teal   { background: var(--cluster-teal-fill);   border-color: var(--cluster-teal-border);   color: var(--cluster-teal-ink); }
+
+/* ---------- Cell-Layout: schlanke Säulen nebeneinander (SM-136) ----------
+   Epic-Säulen UND die Loose-Säule stehen in EINER horizontalen, nicht-
+   wrappenden Reihe. Die Cell-Breite ist via columnMultiplier so bemessen,
+   dass alle Säulen hineinpassen; overflow-x:clip auf .sm-cell ist ein
+   defensives Netz (clip statt auto — SM-281: kein Scroll-Container, sonst
+   fängt die Zelle die horizontale Trackpad-Geste ab). align-items:stretch
+   (SM-134) gleicht die Säulen-
+   Unterkanten an. */
+.sm-cell-epics {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;          /* SM-136: keine zweite Reihe — alles nebeneinander */
+  align-items: stretch;       /* SM-134: Säulen auf gleiche Höhe → Unterkanten alignen */
+  flex: 1;                    /* füllt die Zell-Höhe (= Release-Row-Höhe via Grid-Stretch) */
+  gap: 8px;
+}
+/* SM-136: Loose-Säule — visuell wie eine Epic-Karte (Papier + Lift), aber
+   mit neutralem Header-Band statt Plum. Breite wird inline auf
+   STORY_CARD_WIDTH_PX gesetzt (Konstante bleibt Single-Source). */
+.sm-loose-card {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  background: var(--paper);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lift);
+}
+.sm-loose-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  height: var(--sm-epic-header-h);   /* SM-136: gleiche Höhe wie Epic-Header → Baseline */
+  box-sizing: border-box;
+  overflow: hidden;
+  background: rgba(26, 26, 26, 0.05);
+  border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+}
+.sm-loose-title {
+  font-weight: 600;
+  color: var(--ink-soft);
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+/* SM-136: Loose-Stories als Single-Column-Grid — identische Rhythmik wie
+   .sm-stories-grid (feste Karten-Höhe, gleiche Gaps/Paddings), damit die
+   losen Karten Zeile für Zeile mit den Epic-Stories fluchten. Die einzige
+   Spaltenbreite wird inline gesetzt (epicW − 2×Padding). */
+.sm-cell-loose {
+  display: grid;
+  grid-auto-flow: row;
+  grid-auto-rows: var(--sm-card-h);
+  gap: 4px;
+  padding: 6px;
+  background: transparent;
+}
+
+/* ---------- Epic-Karte (Container für Stories) ---------- */
+.sm-epic-card {
+  /* Kein flächiger Plum-BG mehr — sonst entstand ein "Klammer"-Effekt
+     unterhalb des Story-Grids. Stattdessen Papierhintergrund + Header
+     trägt die Cluster-Farbe als oberer Akzent. */
+  border: 0;
+  background: var(--paper);
+  border-radius: 6px;
+  overflow: hidden;     /* clip Header-Plum an den abgerundeten Ecken */
+  cursor: grab;
+  box-shadow: var(--shadow-lift);
+  transition: transform 0.1s, box-shadow 0.1s;
+  flex: 0 1 auto;       /* shrink-to-fit innerhalb von .sm-cell-epics */
+  width: fit-content;
+  min-width: 232px;     /* eine Story-Spaltenbreite + Padding */
+  max-width: 100%;      /* SM-55: niemals breiter als die Cell */
+}
+.sm-epic-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(26,26,26,0.08), 0 10px 28px rgba(26,26,26,0.08);
+}
+.sm-epic-card.sm-dragging { opacity: 0.4; cursor: grabbing; }
+.sm-epic-card.sm-drop-target {
+  box-shadow: inset 0 0 0 3px var(--accent), 0 4px 12px rgba(15, 95, 79, 0.30);
+  transform: scale(1.01);
+}
+/* SM-131: uniform-grid Layout-Tokens (spiegeln STORY_MAP_LAYOUT). */
+.sm-grid {
+  --sm-card-h: 72px;
+  --sm-epic-header-h: 56px;
+  --sm-gap: 8px;
+  --sm-pad: 6px;
+}
+.sm-epic-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  height: var(--sm-epic-header-h);   /* SM-131: feste Header-Höhe */
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--cluster-plum-fill);
+  border-bottom: 1px solid rgba(90, 57, 87, 0.18);
+  font-size: 12px;
+  cursor: pointer;
+}
+.sm-epic-header:hover { background: rgba(90, 57, 87, 0.10); }
+/* SM-138: kompaktes „+" im Epic-Header (oben rechts), neben dem Chevron. */
+.sm-epic-add {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--cluster-plum-ink);
+  cursor: pointer;
+  font-size: 14px; font-weight: 700; line-height: 1;
+  padding: 2px 6px;
+  min-width: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.sm-epic-add:hover {
+  background: rgba(90, 57, 87, 0.10);
+  border-color: var(--cluster-plum-border);
+}
+.sm-epic-info {
+  display: flex; flex-direction: column; gap: 1px;
+  flex: 1; min-width: 0;
+}
+.sm-epic-title {
+  font-weight: 600;
+  color: var(--cluster-plum-ink);
+  font-size: 12px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  /* SM-131: fest auf 2 Zeilen + Ellipse (statt freiem Umbruch). */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sm-epic-key {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+
+/* + Story Button am Boden jeder Epic-Karte */
+.sm-add-story {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin: 6px 8px 8px;
+  padding: 4px 8px;
+  font: inherit; font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed rgba(90, 57, 87, 0.4);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.sm-add-story:hover {
+  background: rgba(90, 57, 87, 0.08);
+  color: var(--cluster-plum-ink);
+  border-color: var(--cluster-plum-border);
+  border-style: solid;
+}
+.sm-add-story .sm-add-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 12px; height: 12px;
+  background: rgba(90, 57, 87, 0.5);
+  color: var(--paper);
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+.sm-add-story:hover .sm-add-icon { background: var(--cluster-plum-border); }
+
+/* ---------- Stories-Grid unter dem Epic (Single-Column, SM-135) -----------
+   Inline-Styles vom Renderer setzen:
+     grid-auto-flow: row
+     grid-template-columns: <inside-story-width>
+     grid-auto-rows: var(--sm-card-h)
+   Stories stapeln einspaltig vertikal und wachsen beliebig nach unten —
+   kein Sub-Spalten-Wrap mehr (jedes Epic ist eine schlanke Säule). */
+.sm-stories-grid {
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  background: transparent;   /* erbt --paper vom .sm-epic-card, kein Plum unten */
+  /* SM-84: animated collapse — the grid stays in the DOM and animates via
+     max-height + opacity + padding. main.js owns the inline max-height
+     (scrollHeight → 0 on collapse, 0 → scrollHeight on expand, then cleared
+     after transitionend so future story additions aren't clipped). We do
+     NOT set max-height in the .sm-stories-grid-collapsed class — that
+     would clobber the inline start value and Safari would skip the
+     transition. overflow:hidden is permanent for clean animation edges. */
+  overflow: hidden;
+  transition:
+    max-height 240ms ease,
+    opacity     200ms ease,
+    padding     240ms ease;
+}
+.sm-stories-grid.sm-stories-grid-collapsed {
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+/* SM-84 — collapse chevron in the epic header. Sits at the rightmost
+   end, after .sm-epic-info (flex:1) and .sm-epic-badges. Small + neutral
+   so it doesn't compete with the title or badges for attention. */
+.sm-epic-chevron {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 6px;
+  min-width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.sm-epic-chevron:hover {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--rule);
+}
+.sm-epic-card.sm-epic-card-collapsed .sm-epic-header {
+  border-bottom-color: transparent;
+}
+
+/* ---------- Story-Karte (paperlike, cluster-coloured) -------------
+   Width wird inline aus STORY_CARD_WIDTH_PX gesetzt. Kein Border —
+   das Cluster-Fill kodiert den Type. */
+.sm-story-card {
+  border: 0;
+  border-radius: 4px;
+  padding: 6px 8px;
+  height: var(--sm-card-h);   /* SM-131: feste Höhe → uniformes Raster */
+  overflow: hidden;
+  cursor: grab;
+  font-size: 11px;
+  line-height: 1.35;
+  transition: transform 0.08s, box-shadow 0.08s;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+.sm-story-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+}
+.sm-story-card.sm-dragging { opacity: 0.4; cursor: grabbing; }
+
+/* Drag-Live-Preview: Origin verschwindet, eine Schatten-Karte erscheint
+   an der Insertion-Position im Drop-Target. Gestricheltes 2px-Border +
+   gedimmt — wie svelte-dnd-action in der alten StoryBrain. */
+.sm-card-shadow {
+  border: 2px dashed var(--accent) !important;
+  background: var(--paper-warm) !important;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.sm-card-info { display: flex; flex-direction: column; gap: 1px; }
+
+.sm-story-key {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 9px;
+  color: currentColor;
+  opacity: 0.55;
+  letter-spacing: 0.02em;
+}
+.sm-story-title {
+  font-weight: 500;
+  color: currentColor;
+  line-height: 1.35;
+  height: calc(2 * 1.35em);   /* SM-131: 2-Zeilen-Slot, 1-Zeiler füllt ihn auch */
+  overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.sm-card-meta {
+  display: flex; gap: 4px; flex-wrap: nowrap; align-items: center;
+  margin-top: 4px;
+  overflow: hidden;   /* SM-131: einzeilig, Überlauf (Links/Exec) clippen */
+  font-size: 10px; color: var(--ink-soft);
+}
+.sm-card-status {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 9px; font-weight: 500;
+  text-transform: capitalize;
+}
+.sm-card-release-tag {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  font-size: 10px;
+  color: var(--ink);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* Status-Pill colours (alt-StoryBrain-Palette) */
+.sm-status-pill-backlog     { background: #e5e7eb; color: #374151; }
+.sm-status-pill-ready       { background: #dbeafe; color: #1e40af; }
+.sm-status-pill-in-progress { background: #fef3c7; color: #92400e; }
+.sm-status-pill-review      { background: #ede9fe; color: #5b21b6; }
+.sm-status-pill-done        { background: #d1fae5; color: #065f46; }
+/* SM-244: cancelled = terminal, deliberately dropped. Muted + struck through. */
+.sm-status-pill-cancelled   { background: #e7e5e4; color: #78716c; text-decoration: line-through; }
+
+/* SM-244: a cancelled card is dimmed and its title struck through — visible
+   (Cancel ≠ Delete) but clearly out of scope. Applies on both views (the
+   shared card carries .sm-status-cancelled; the epic card too). */
+.sm-story-card.sm-status-cancelled,
+.sm-epic-card.sm-status-cancelled { opacity: 0.6; }
+.sm-story-card.sm-status-cancelled .sm-story-title,
+.sm-epic-card.sm-status-cancelled .sm-epic-title { text-decoration: line-through; }
+
+.sm-badge {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  font-size: 9px;
+}
+.sm-badge-dor { color: var(--target); }
+.sm-badge-dod { color: var(--accent); }
+
+/* SM-170: card-aging badge — surfaces cards sitting too long in an active
+   status. Amber at WARN, red at STALE (thresholds in renderer-card.js). */
+.sm-card-age { font-weight: 700; letter-spacing: 0.02em; }
+.sm-card-age-warn {
+  color: #8A5A12;
+  background: rgba(214, 158, 46, 0.16);
+  border-color: rgba(214, 158, 46, 0.55);
+}
+.sm-card-age-stale {
+  color: var(--danger, #B43C3C);
+  background: rgba(180, 60, 60, 0.14);
+  border-color: rgba(180, 60, 60, 0.55);
+}
+
+/* SM-49: link badges (forward / backward dependency counts) */
+.sm-link-badge {
+  cursor: pointer;
+  font-weight: 500;
+  border-color: transparent;
+}
+.sm-link-badge-sem-blocking    { background: #FCE4E4; color: #8A1F1F; }
+.sm-link-badge-sem-precedence  { background: #DCE6F5; color: #1E3A6B; }
+.sm-link-badge-sem-sequence    { background: #E5E7EB; color: #374151; }
+.sm-link-badge-sem-containment { background: #DEF0E3; color: #1F5530; }
+.sm-link-badge-sem-validation  { background: #FCEFD3; color: #8A5A14; }
+.sm-link-badge-sem-freeform    { background: #E5E7EB; color: #4B5563; }
+.sm-link-badge-sem-mixed       { background: #ECE4F2; color: #4A2860; }
+.sm-link-badge:hover { filter: brightness(0.96); }
+.sm-link-badge-backward { font-style: italic; opacity: 0.92; }
+
+/* SM-60: last-execution outcome badge (test-definition cards only).
+   Cursor:pointer because clicking opens the linked execution modal.
+   Colours roughly match the in-modal outcome pill so the user sees the
+   same encoding everywhere. */
+.sm-exec-badge {
+  cursor: pointer;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-color: transparent;
+}
+.sm-exec-badge:hover { filter: brightness(0.95); }
+.sm-exec-badge-passed   { background: rgba(34, 139, 34, 0.16);  color: #1F5530; }
+.sm-exec-badge-failed   { background: rgba(180, 60, 60, 0.18);  color: #8A1F1F; }
+.sm-exec-badge-blocked  { background: rgba(230, 180, 50, 0.24); color: #8A5A14; }
+.sm-exec-badge-skipped  { background: rgba(150, 150, 150, 0.18); color: #4B5563; }
+.sm-exec-badge-pending  { background: var(--paper-warm); color: var(--ink-soft); }
+.sm-exec-badge-untested {
+  background: transparent;
+  color: var(--ink-faint);
+  border: 1px dashed var(--rule);
+  cursor: default;
+  font-style: italic;
+}
+
+.sm-epic-badges {
+  display: inline-flex; gap: 4px; align-items: center; margin-left: 8px;
+}
+
+/* ---------- Drag-Affordance + Ghost (E9f, Pointer-Events) ---------- */
+.sm-epic-card, .sm-story-card {
+  cursor: grab;
+  user-select: none;            /* keine Text-Selektion beim Drag */
+  -webkit-user-select: none;
+  touch-action: none;           /* Browser darf kein Scroll bei Drag */
+}
+.sm-epic-card.sm-dragging, .sm-story-card.sm-dragging {
+  opacity: 0.35;
+  cursor: grabbing;
+}
+.sm-drag-ghost {
+  pointer-events: none;
+  transition: none;
+}
+
+/* ---------- Phantom-Release-Row (E9g) — wenn ProcessSteps aber kein Release */
+.sm-phantom-row { opacity: 0.85; }
+.sm-phantom-label {
+  background: var(--rule-soft);
+  padding: 10px;
+  justify-content: center;
+}
+.sm-phantom-cta {
+  font-size: 11px;
+  padding: 6px 10px;
+  border-style: dashed;
+  background: transparent;
+}
+.sm-phantom-cta:hover {
+  border-style: solid;
+  background: var(--paper-warm);
+}
+.sm-phantom-cell {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--rule-soft),
+    var(--rule-soft) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+}
+.sm-phantom-cell::after {
+  content: "";
+  display: block;
+  height: 100%;
+  min-height: 80px;
+}
+
+/* ---------- Backlog-Section unten (Epics ohne Release) ---------- */
+/* SM-253: per-release holding strip — release-assigned-but-unplaced tickets sit
+   in a compact strip under their release's cells row (drag into a step to place;
+   drop here / on the release header to unplace). No global backlog anymore. */
+.sm-release-unplaced-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 12px 10px;
+  margin-bottom: 2px;
+  background: var(--rule-soft);
+}
+.sm-release-unplaced-row.sm-drop-target,
+.sm-release-label-row.sm-drop-target {
+  box-shadow: inset 3px 0 0 var(--accent);
+  background: var(--accent-soft);
+}
+.sm-release-unplaced-label {
+  flex: 0 0 auto;
+  padding-top: 6px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.sm-release-unplaced-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sm-backlog-section {
+  margin-top: 24px;
+  padding: 12px 16px 24px;
+  border-top: 2px solid var(--rule);
+  background: var(--rule-soft);
+}
+.sm-backlog-title {
+  font-size: 13px; font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sm-add-backlog-item {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 8px;
+  padding: 5px 12px;
+  font: inherit; font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms;
+  align-self: flex-start;
+}
+.sm-add-backlog-item:hover {
+  background: var(--paper-warm);
+  color: var(--ink);
+  border-color: var(--ink-faint);
+  border-style: solid;
+}
+.sm-add-backlog-item .sm-add-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px;
+  background: var(--ink-faint);
+  color: var(--paper);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+.sm-add-backlog-item:hover .sm-add-icon { background: var(--accent); }
+/* Backlog ist eine PRIORISIERTE Liste (oben = höchste Priorität). Stack
+   vertikal, per Drag & Drop sortierbar. Maximalbreite, damit die Karten
+   nicht über die ganze Map ausufern. */
+.sm-backlog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 720px;
+}
+.sm-backlog-list .sm-story-card,
+.sm-backlog-list .sm-epic-card {
+  width: 100%;
+  max-width: 100%;
+}
+/* SM-193: multi-column backlog — CSS columns balance card heights; the
+   column-count + max-width are set inline from the layout constants. The 8px
+   below mirrors STORY_MAP_LAYOUT.TICKET_GAP_PX (the inline max-width math in
+   applyBacklogWrap assumes the same gap — keep both in sync if it changes). */
+.sm-backlog-list-multicol {
+  display: block;          /* override the flex column so cards flow into columns */
+  column-gap: 8px;         /* == TICKET_GAP_PX */
+}
+.sm-backlog-list-multicol .sm-story-card,
+.sm-backlog-list-multicol .sm-epic-card {
+  break-inside: avoid;     /* never split a card across a column boundary */
+  -webkit-column-break-inside: avoid;
+  margin-bottom: 8px;      /* == TICKET_GAP_PX (flex `gap` doesn't apply in block/column flow) */
+}
+.sm-backlog-empty {
+  color: var(--ink-faint);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* ============================================================
+   E10 — Ticket-Detail-Modal
+   ============================================================ */
+
+/* Widen the standard modal when it hosts the ticket-detail body. */
+.modal-overlay .modal:has(.tm-body-host) {
+  width: 760px;
+  max-width: 92vw;
+}
+.tm-body-host {
+  display: flex; flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 68vh;
+  padding-right: 4px;
+}
+
+.tm-header {
+  display: flex; align-items: center; gap: 8px;
+  margin: -4px 0 8px;
+}
+.tm-key {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+.tm-type-badge {
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  background: var(--rule-soft);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+
+.tm-error-banner {
+  font-size: 12px;
+  background: rgba(180, 60, 60, 0.10);
+  color: var(--danger, #B43C3C);
+  border: 1px solid var(--danger, #B43C3C);
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin: 0 0 6px;
+}
+
+/* Form row layout — mirrors .modal-row but namespaced. */
+.tm-row {
+  display: flex; align-items: center; gap: 8px;
+  margin: 6px 0;
+}
+.tm-label {
+  flex: 0 0 130px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.tm-input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  font: inherit; font-size: 12px;
+  color: var(--ink);
+}
+.tm-input:focus { outline: none; border-color: var(--ink); }
+.tm-input:disabled {
+  opacity: 0.7;
+  background: var(--paper-soft, var(--paper));
+  cursor: not-allowed;
+}
+/* SM-238 — epic derived-status: a read-only pill + the derivation breakdown,
+   in place of the editable status <select>. The epic's status is rolled up
+   from its stories, so there is nothing to pick here. */
+.tm-status-derived-wrap { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.tm-status-derived {
+  align-self: flex-start;
+  padding: 2px 10px;
+  border-radius: 9px;
+  font-size: 11px; font-weight: 700;
+  background: var(--accent-soft, rgba(15, 95, 79, 0.16));
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.tm-status-breakdown { font-size: 11px; color: var(--ink-soft, #717071); }
+/* SM-67: inherited-position hint shown under Release/ProcessStep when a
+   story is contained by an epic. Standalone row (not a child of .tm-row). */
+.tm-field-hint {
+  margin: -2px 0 6px 138px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.tm-field-hint:empty { display: none; }
+.tm-textarea {
+  flex: 1;
+  min-height: 90px;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  font: inherit; font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  resize: vertical;
+}
+.tm-textarea:focus { outline: none; border-color: var(--ink); }
+
+/* SM-119: plain-text contentEditable Description. Grows with content — no
+   max-height, no inner scrollbar. white-space: pre-wrap keeps user newlines.
+   Shared by the modal and the full-page editor (both build it from
+   ticket-form.js#buildDescriptionField). */
+.tm-description-edit {
+  min-height: 90px;
+  padding: 8px 10px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  cursor: text;
+}
+.tm-description-edit:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+/* SM-157: Jira-style inline confirm/cancel for the description. The row wraps so
+   the ✓/✗ sit on their own line under the editable, aligned with it (label is
+   flex 0 0 130px + 8px gap = 138px). Hidden until the text differs from saved. */
+.tm-row:has(.tm-description-edit) { flex-wrap: wrap; align-items: flex-start; }
+.tm-desc-actions {
+  flex-basis: 100%;
+  margin-left: 138px;
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+}
+.tm-desc-save, .tm-desc-cancel {
+  width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  font-size: 13px; line-height: 1;
+  cursor: pointer;
+}
+.tm-desc-save { color: var(--accent); border-color: var(--accent); }
+.tm-desc-save:hover { background: var(--accent); color: var(--paper); }
+.tm-desc-cancel { color: var(--ink-soft); }
+.tm-desc-cancel:hover { border-color: var(--ink); color: var(--ink); }
+
+/* Section headings inside the modal. */
+.tm-section-title {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin: 14px 0 6px;
+}
+
+/* SM-185 — Attachments section (ticket-scoped dropzone + list) */
+.tm-attachments-section { margin-top: 14px; }
+.tm-attach-dropzone {
+  border: 1px dashed var(--rule);
+  border-radius: 6px;
+  padding: 14px;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+.tm-attach-dropzone:hover,
+.tm-attach-dropzone-over {
+  background: var(--paper-warm);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+.tm-attach-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tm-attach-empty { color: var(--ink-faint); font-size: 12px; font-style: italic; padding: 2px 6px; }
+.tm-attach-item { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 6px; border-radius: 4px; }
+.tm-attach-item:hover { background: var(--paper-warm); }
+.tm-attach-name { color: var(--accent); text-decoration: none; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tm-attach-name:hover { text-decoration: underline; }
+.tm-attach-size { color: var(--ink-faint); font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11px; }
+.tm-attach-del {
+  appearance: none; background: transparent; border: none; cursor: pointer;
+  color: var(--ink-faint); font-size: 12px; line-height: 1; padding: 2px 6px; border-radius: 4px;
+}
+.tm-attach-del:hover { color: var(--danger, #B43C3C); background: var(--paper); }
+
+/* SM-195 — attachment dropzone inside the New-project dialog row (fills the
+   modal-row's second column next to the label). */
+.np-attach-row { align-items: flex-start; }
+.np-attach-wrap { flex: 1; }
+
+/* Checklists (DoR / DoD). */
+.tm-checklist {
+  border-top: 1px dashed var(--rule);
+  padding: 4px 0 0;
+}
+.tm-checklist-empty {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-style: italic;
+  padding: 4px 0;
+}
+.tm-checkitem {
+  display: flex; align-items: center;
+  padding: 3px 0;
+  font-size: 12px;
+}
+.tm-checkitem-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer;
+  flex: 1;
+}
+.tm-checkitem-text { color: var(--ink); }
+.tm-required-tag {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  background: var(--rule-soft);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-left: auto;
+}
+
+/* Acceptance criteria — small inline list editor. */
+.tm-ac-section {
+  border-top: 1px dashed var(--rule);
+  padding: 4px 0 0;
+}
+.tm-ac-list { display: flex; flex-direction: column; gap: 4px; }
+.tm-ac-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 100ms, box-shadow 100ms;
+}
+.tm-ac-row.sm-dragging { opacity: 0.4; }
+.tm-ac-row.tm-ac-drop-target {
+  background: var(--paper-warm);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.tm-ac-grip {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  font-size: 11px;
+  letter-spacing: -2px;
+  cursor: grab;
+  user-select: none;
+  padding: 0 2px;
+}
+.tm-ac-grip:active { cursor: grabbing; }
+.tm-ac-row input[type="checkbox"] { flex: 0 0 auto; }
+.tm-ac-text { flex: 1; }
+.tm-ac-remove {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  width: 22px; height: 22px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.tm-ac-remove:hover { color: var(--danger, #B43C3C); border-color: var(--danger, #B43C3C); }
+.tm-ac-add {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  font: inherit; font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+.tm-ac-add:hover {
+  background: var(--paper-warm); color: var(--ink);
+  border-color: var(--ink-faint); border-style: solid;
+}
+.tm-ac-add .sm-add-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px;
+  background: var(--ink-faint); color: var(--paper);
+  border-radius: 50%; font-size: 11px; font-weight: 700; line-height: 1;
+}
+
+/* Project-Load-Dialog (cmapper-Pattern). Liste von Cards mit Counts. */
+.project-list-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+.project-list-empty,
+.project-list-empty-filtered {
+  color: var(--ink-faint);
+  font-style: italic;
+  font-size: 12px;
+  padding: 12px 0;
+}
+/* SM-209 — project picker search + sort toolbar (cmapper parity). */
+.project-picker-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.project-picker-toolbar .project-search {
+  flex: 1 1 auto;
+  font-size: 12px;
+  padding: 5px 9px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.project-picker-toolbar .project-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.project-picker-toolbar .project-sort {
+  flex: 0 0 auto;
+  font-size: 12px;
+  padding: 5px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+.project-card-desc {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.project-card-mtime {
+  font-size: 10px;
+  color: var(--ink-faint);
+  margin-top: 4px;
+}
+.project-card {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 100ms, border-color 100ms, transform 80ms;
+}
+.project-card:hover {
+  background: var(--paper-warm);
+  border-color: var(--ink-faint);
+  transform: translateY(-1px);
+}
+.project-card.current {
+  cursor: default;
+  border-color: var(--accent);
+  background: var(--paper-warm);
+}
+.project-card.current:hover { transform: none; }
+.project-card-header {
+  display: flex; align-items: baseline; gap: 8px;
+  margin-bottom: 4px;
+}
+.project-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.project-card-id {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+.project-card-current-badge {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(15, 95, 79, 0.10);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+.project-card-counts {
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+.project-card-delete {
+  position: absolute;
+  top: 8px; right: 10px;
+  padding: 2px 8px;
+  font-size: 10px;
+  display: none;   /* hidden until hover */
+}
+.project-card:hover .project-card-delete { display: inline-block; }
+
+/* E13 — History-Dialog (Revisions-Liste, cmapper-Pattern). */
+.hist-list {
+  display: flex; flex-direction: column;
+  gap: 4px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+.hist-empty {
+  color: var(--ink-faint);
+  font-style: italic;
+  font-size: 12px;
+  padding: 12px 0;
+}
+.hist-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  transition: background 100ms, border-color 100ms;
+}
+.hist-row:hover {
+  background: var(--paper-warm);
+  border-color: var(--ink-faint);
+}
+.hist-row-main {
+  display: flex; align-items: center; gap: 10px;
+  flex: 1; min-width: 0;
+}
+.hist-timestamp {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+  color: var(--ink);
+}
+.hist-op-pill {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  background: var(--rule-soft);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+.hist-actor {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-left: auto;
+  margin-right: 8px;
+}
+.hist-restore { padding: 3px 10px; font-size: 11px; }
+
+/* Type-Picker (small modal that opens BEFORE the create-modal). */
+.tm-type-picker {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 6px 0 0;
+}
+.tm-type-pick-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  font: inherit; font-size: 13px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 100ms, border-color 100ms;
+}
+.tm-type-pick-btn:hover {
+  background: var(--paper-warm);
+  border-color: var(--ink-faint);
+}
+.tm-type-pick-name {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* ============================================================
+   E11 — View-Toggle (Map / Kanban)
+   ============================================================ */
+
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--paper);
+}
+.view-toggle-btn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 5px 12px;
+  font: inherit; font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 100ms, color 100ms;
+}
+.view-toggle-btn + .view-toggle-btn { border-left: 1px solid var(--rule); }
+.view-toggle-btn:hover {
+  background: var(--paper-warm);
+  color: var(--ink);
+}
+.view-toggle-btn.active {
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+}
+
+/* ============================================================
+   SM-82 — Filter Button + Popover
+   ============================================================ */
+
+/* SM-16 — toolbar ticket search */
+.ticket-search {
+  appearance: none;
+  width: 240px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 5px 10px;
+  margin-right: 8px;
+  font: inherit; font-size: 12px;
+  color: var(--ink);
+  transition: width 120ms ease, border-color 100ms;
+}
+/* SM-191: the search box is the unified smart-bar — queries are longer than a
+   word, so it grows wider on focus. */
+.ticket-search:focus { outline: none; border-color: var(--accent); width: 420px; }
+.ticket-search::placeholder { color: var(--ink-soft); }
+.smartbar-status {
+  font-size: 11px;
+  margin-right: 8px;
+  white-space: nowrap;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.smartbar-status-ok    { color: var(--ink-soft); }
+.smartbar-status-error { color: var(--danger, #a23); }
+/* SM-216: Jira-style autocomplete dropdown (fixed-positioned under the bar). */
+.smartbar-ac {
+  position: fixed;
+  z-index: 200;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  font-size: 12px;
+}
+.smartbar-ac-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.smartbar-ac-item.active,
+.smartbar-ac-item:hover { background: var(--paper-warm); }
+.smartbar-ac-label { color: var(--ink); }
+.smartbar-ac-kind  { color: var(--ink-faint); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* SM-16 — live search highlight: matched cards pop, non-matched fade. */
+.sm-story-card.sm-search-dim { opacity: 0.22; }
+.sm-story-card.sm-search-hit { box-shadow: 0 0 0 2px var(--accent); }
+.sm-story-card.sm-search-dim,
+.sm-story-card.sm-search-hit { transition: opacity 140ms ease, box-shadow 140ms ease; }
+/* SM-208 — epic cards ring on match too. They are never dimmed (their opacity
+   cascades to contained story cards), so only the hit-ring applies. */
+.sm-epic-card.sm-search-hit { box-shadow: 0 0 0 2px var(--accent); }
+.sm-epic-card.sm-search-hit { transition: box-shadow 140ms ease; }
+
+/* SM-167 — release-completion warning (reactive inline list in Edit Release). */
+.er-open-warning {
+  margin-top: 10px;
+  border: 1px solid var(--danger, #b04a3a);
+  border-radius: 6px;
+  background: var(--danger-soft, rgba(176,74,58,0.08));
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.er-open-head { color: var(--ink); margin-bottom: 6px; }
+.er-open-list { list-style: none; margin: 0; padding: 0; max-height: 160px; overflow-y: auto; }
+.er-open-list li { display: flex; align-items: baseline; gap: 8px; padding: 2px 0; }
+.er-open-key { font-weight: 600; color: var(--ink); flex: 0 0 auto; }
+.er-open-title { color: var(--ink-soft); flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.er-open-status { flex: 0 0 auto; font-size: 11px; color: var(--ink-soft); border: 1px solid var(--rule); border-radius: 10px; padding: 0 7px; }
+
+.filter-btn {
+  appearance: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 5px 12px;
+  margin-right: 8px;
+  font: inherit; font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 100ms, color 100ms, border-color 100ms;
+}
+.filter-btn:hover { background: var(--paper-warm); color: var(--ink); border-color: var(--ink-faint); }
+.filter-btn.active {
+  background: var(--accent-soft, rgba(15, 95, 79, 0.10));
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.filter-badge {
+  display: inline-block;
+  min-width: 18px; height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--paper);
+  font-size: 11px; font-weight: 700; line-height: 18px;
+  text-align: center;
+}
+
+#filter-popover {
+  position: fixed;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: var(--shadow-lift, 0 8px 24px rgba(0,0,0,0.12));
+  padding: 14px 16px;
+  width: 280px;
+  max-height: 70vh;
+  overflow-y: auto;
+  z-index: 80;
+}
+#filter-popover[hidden] { display: none; }
+.filter-popover-section { margin-bottom: 14px; }
+.filter-popover-section:last-of-type { margin-bottom: 6px; }
+.filter-popover-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px;
+}
+.filter-popover-section-title {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+.filter-popover-section-actions {
+  display: inline-flex; gap: 4px;
+}
+.filter-popover-bulk {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font: inherit; font-size: 10px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-transform: lowercase;
+}
+.filter-popover-bulk:hover { color: var(--accent); border-color: var(--accent); }
+.filter-popover-checkrow {
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 0;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink);
+}
+.filter-popover-checkrow input { margin: 0; cursor: pointer; }
+.filter-popover-checkrow:hover { color: var(--accent); }
+.filter-popover-footer {
+  display: flex; justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--rule);
+}
+.filter-popover-reset {
+  appearance: none;
+  background: transparent;
+  border: none;
+  font: inherit; font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-decoration: underline dotted;
+  padding: 2px 4px;
+}
+.filter-popover-reset:hover { color: var(--danger, #B43C3C); }
+
+/* ============================================================
+   E11 — Kanban-Board
+   ============================================================ */
+
+/* SM-169 — full-bleed like the Story-Map (no page-edge margin); release rows
+   stack flush, separated by the shared release-label-row borders. */
+#kanban-host { padding: 0; }
+.km-board {
+  display: flex; flex-direction: column;
+}
+/* Per-release column header (repeats Backlog / Ready / … / Done inside every
+   expanded swimlane). Shares the cells' grid template so columns line up, and
+   the same nth-of-type stripes so the tinted bands run header→cards. */
+.km-col-header {
+  display: grid;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+.km-col-head-cell {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  padding: 6px 12px;
+  border-right: 1px solid var(--rule);
+}
+.km-col-head-cell:last-child { border-right: none; }
+.km-col-head-cell:nth-of-type(even) { background: #FBF6E8; }
+.km-col-head-cell.km-col-orphan { color: var(--danger, #7A3E26); }
+
+/* SM-169: a swimlane stacks like the Story-Map's release rows — the header is
+   the SHARED `.sm-release-label-row` component (chevron + name + pill, fully
+   styled over in the Story-Map section), so no card chrome of its own. */
+.km-swimlane { background: transparent; }
+/* The count badge rides along in the shared header's `trailing` slot. Pushed
+   to the right so the release name + pill stay left-aligned like the Map. */
+.km-swimlane .km-swimlane-count {
+  margin-left: auto;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+  color: var(--ink-faint);
+  background: var(--rule-soft);
+  border-radius: 3px;
+  padding: 0 5px;
+}
+.km-swimlane-cells {
+  display: grid;
+  align-items: stretch;
+}
+/* Tinted column bands mirror the Story-Map's `.sm-cell` striping so the
+   status columns read as distinct lanes (paper / warm) with a divider rule. */
+.km-cell {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px;
+  min-height: 80px;
+  background: var(--paper);
+  border-right: 1px solid var(--rule);
+  transition: background-color 120ms, box-shadow 120ms;
+}
+.km-cell:nth-of-type(even) { background: #FBF6E8; }
+.km-cell:last-child { border-right: none; }
+.km-cell:hover { background: var(--paper-warm); }
+.km-cell.km-cell-drop-target {
+  background: rgba(15, 95, 79, 0.16);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* Karten in der Kanban-Zelle sind die GLEICHEN `.sm-story-card`-Elemente
+   wie in der Story-Map (renderer-card.js liefert beide Views). Hier nur
+   eine kleine Anpassung: in der Zelle füllen sie die volle Breite. */
+.km-cell .sm-story-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* "+ Add Item" am Ende jeder Lane — Ghost-Variante, gleicher Stil wie
+   die Per-Cell-Add-Buttons in der Story-Map (.sm-add-ticket). */
+.km-add-item {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: stretch;
+  padding: 5px 10px;
+  font: inherit; font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.km-add-item:hover {
+  background: var(--paper-warm);
+  color: var(--ink);
+  border-color: var(--ink-faint);
+  border-style: solid;
+}
+.km-add-item .sm-add-icon {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 14px; height: 14px;
+  background: var(--ink-faint);
+  color: var(--paper);
+  border-radius: 50%;
+  font-size: 11px; line-height: 1; font-weight: 700;
+}
+.km-add-item:hover .sm-add-icon { background: var(--accent); }
+.km-add-item .sm-add-label { letter-spacing: 0.02em; }
+
+/* SM-2/SM-3 — DoR/DoD editor inside the settings view (replaced the
+   deprecated dialog version that used to live here, SM-3). */
+.vs-def-root { display: flex; flex-direction: column; gap: 14px; }
+.vs-def-block-title {
+  font-family: var(--font-display, "Libre Caslon Text"), Georgia, serif;
+  font-size: 15px; font-weight: 600;
+  margin: 8px 0 4px;
+  letter-spacing: -0.01em;
+}
+.vs-def-block { display: flex; flex-direction: column; gap: 4px; }
+.vs-def-block-title {
+  font-size: 12px; font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin: 4px 0 2px;
+}
+.vs-def-globals, .vs-def-per-type {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.vs-def-type-block {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 12px;
+  background: var(--paper-warm, #FAF7F0);
+}
+.vs-def-type-title {
+  font-family: var(--font-display, "Libre Caslon Text"), Georgia, serif;
+  font-size: 13px; font-weight: 600;
+  margin: 0 0 6px;
+}
+.vs-def-gate-block { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--rule); }
+.vs-def-gate-block:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+.vs-def-gate-header { display: flex; align-items: center; gap: 8px; }
+.vs-def-gate-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.vs-def-gate-body {
+  padding: 6px 0 0 22px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.vs-def-mode-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.vs-def-mode-label { color: var(--ink-soft); }
+.vs-def-items-list { display: flex; flex-direction: column; gap: 4px; }
+.vs-def-item-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 100ms, box-shadow 100ms;
+}
+.vs-def-item-row.sm-dragging { opacity: 0.4; }
+.vs-def-item-row.vs-def-item-drop-target {
+  background: var(--paper);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.vs-def-item-grip {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  font-size: 11px;
+  letter-spacing: -2px;
+  cursor: grab;
+  user-select: none;
+  padding: 0 2px;
+}
+.vs-def-item-grip:active { cursor: grabbing; }
+.vs-def-item-required-wrap {
+  display: inline-flex; align-items: center; gap: 3px;
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  cursor: pointer;
+  user-select: none;
+}
+.vs-def-item-required-hint { font-size: 10px; }
+.vs-def-item-label {
+  flex: 1;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 4px 6px;
+  background: var(--paper);
+  font: inherit; font-size: 12px;
+}
+.vs-def-item-label:focus { outline: none; border-color: var(--ink); }
+.vs-def-item-remove {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  width: 22px; height: 22px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.vs-def-item-remove:hover { color: var(--danger, #B43C3C); border-color: var(--danger, #B43C3C); }
+.vs-def-add-item {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.vs-def-add-item:hover { color: var(--ink); border-style: solid; border-color: var(--ink-faint); }
+
+/* E19-followup — DoR/DoD per-Ticket-Editor (editable rows analog AC) */
+.tm-checklist-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.tm-checkitem-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 100ms, box-shadow 100ms;
+}
+.tm-checkitem-row.sm-dragging { opacity: 0.4; }
+.tm-checkitem-row.tm-checkitem-drop-target {
+  background: var(--paper-warm);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.tm-checkitem-grip {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  font-size: 11px;
+  letter-spacing: -2px;
+  cursor: grab;
+  user-select: none;
+  padding: 0 2px;
+}
+.tm-checkitem-grip:active { cursor: grabbing; }
+.tm-checkitem-checked { flex: 0 0 auto; }
+.tm-checkitem-text-input { flex: 1; }
+.tm-checkitem-required-wrap {
+  display: inline-flex; align-items: center; gap: 3px;
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  cursor: pointer;
+  user-select: none;
+}
+.tm-checkitem-required-hint { font-size: 10px; }
+.tm-checkitem-remove {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  width: 22px; height: 22px;
+  font-size: 14px; line-height: 1;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.tm-checkitem-remove:hover { color: var(--danger, #B43C3C); border-color: var(--danger, #B43C3C); }
+.tm-checklist-add {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  font: inherit; font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.tm-checklist-add:hover { color: var(--ink); border-style: solid; border-color: var(--ink-faint); }
+
+/* ---------------------------------------------------------------------------
+   SM-54 — Prerequisites + Steps editor sections (test-definition type)
+   Visually parallel to DoR/DoD (.tm-checkitem-row) so the editor feels
+   uniform; Steps gets a 3-column grid because step / data / expected
+   are three independent fields.
+   --------------------------------------------------------------------------- */
+
+.tm-prereqs { border-top: 1px dashed var(--rule); padding: 4px 0 0; }
+.tm-prereq-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.tm-prereq-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 100ms, box-shadow 100ms;
+}
+.tm-prereq-row.sm-dragging { opacity: 0.4; }
+.tm-prereq-row.tm-prereq-drop-target {
+  background: var(--paper-warm);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.tm-prereq-grip {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  font-size: 11px;
+  letter-spacing: -2px;
+  cursor: grab;
+  user-select: none;
+  padding: 0 2px;
+}
+.tm-prereq-grip:active { cursor: grabbing; }
+.tm-prereq-checked { flex: 0 0 auto; }
+.tm-prereq-text-input { flex: 1; }
+.tm-prereq-required-wrap {
+  display: inline-flex; align-items: center; gap: 3px;
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  cursor: pointer;
+  user-select: none;
+}
+.tm-prereq-required-hint { font-size: 10px; }
+.tm-prereq-remove {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  width: 22px; height: 22px;
+  font-size: 14px; line-height: 1;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.tm-prereq-remove:hover { color: var(--danger, #B43C3C); border-color: var(--danger, #B43C3C); }
+.tm-prereq-add {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  font: inherit; font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.tm-prereq-add:hover { color: var(--ink); border-style: solid; border-color: var(--ink-faint); }
+
+.tm-test-steps { border-top: 1px dashed var(--rule); padding: 4px 0 0; }
+/* Table header + rows share the SAME 6-column grid so labels sit exactly
+   above their inputs: [grip] [Step] [Data] [Expected Result] [insert] [delete].
+   SM-54-followup. */
+.tm-test-step-head {
+  display: grid;
+  grid-template-columns: 20px 1fr 1fr 1fr 26px 26px;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+  padding: 2px 4px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+}
+.tm-test-step-head-cell { text-align: left; }
+.tm-test-step-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.tm-test-step-row {
+  display: grid;
+  grid-template-columns: 20px 1fr 1fr 1fr 26px 26px;
+  gap: 6px;
+  /* Align tops so multi-line textareas grow downward without pushing the
+     grip / button cells off-axis. */
+  align-items: start;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 100ms, box-shadow 100ms;
+}
+.tm-test-step-row.sm-dragging { opacity: 0.4; }
+.tm-test-step-row.tm-test-step-drop-target {
+  background: var(--paper-warm);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.tm-test-step-grip {
+  color: var(--ink-faint);
+  font-size: 11px;
+  letter-spacing: -2px;
+  cursor: grab;
+  user-select: none;
+  padding: 6px 2px 0;   /* nudges down to align with first textarea row */
+}
+.tm-test-step-grip:active { cursor: grabbing; }
+/* Multi-line textareas, auto-grown by JS. min-height matches an input. */
+.tm-test-step-step,
+.tm-test-step-data,
+.tm-test-step-expected {
+  width: 100%;
+  min-height: 32px;
+  font: inherit; font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper);
+  resize: none;       /* JS handles the resize via scrollHeight */
+  line-height: 1.35;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+.tm-test-step-insert,
+.tm-test-step-remove {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  width: 22px; height: 22px;
+  font-size: 12px; line-height: 1;
+  color: var(--ink-faint);
+  cursor: pointer;
+  margin-top: 4px;    /* tops with the textarea inner padding */
+  padding: 0;
+}
+.tm-test-step-insert:hover { color: var(--accent); border-color: var(--accent); }
+.tm-test-step-remove:hover { color: var(--danger, #B43C3C); border-color: var(--danger, #B43C3C); }
+.tm-test-step-add {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  font: inherit; font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.tm-test-step-add:hover { color: var(--ink); border-style: solid; border-color: var(--ink-faint); }
+
+/* ---------------------------------------------------------------------------
+   SM-57 — Test-Execution sections in ticket-detail modal
+   --------------------------------------------------------------------------- */
+
+/* Header pill: "executes → DEF-KEY: Title". Sits just under the description. */
+.tm-exec-header {
+  margin: 6px 0 0;
+  display: flex;
+  align-items: center;
+}
+.tm-exec-header-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--ink);
+  transition: background 120ms, border-color 120ms;
+}
+.tm-exec-header-pill:hover { background: var(--paper); border-color: var(--ink-faint); }
+.tm-exec-header-arrow { color: var(--ink-soft); font-size: 11px; }
+.tm-exec-header-key   { font-weight: 600; }
+.tm-exec-header-title { color: var(--ink-soft); }
+.tm-exec-header-missing {
+  color: var(--ink-faint);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Metadata strip: three small cells, label above value. */
+.tm-exec-meta {
+  display: flex;
+  gap: 18px;
+  margin: 6px 0;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+.tm-exec-meta-cell { display: flex; flex-direction: column; gap: 1px; }
+.tm-exec-meta-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+.tm-exec-meta-value { font-size: 12px; color: var(--ink); }
+
+/* Execution-steps table: header + rows share a 6-column grid.
+   [Step] [Data] [Expected] [Actual] [Status] [Note] */
+.tm-exec-steps { border-top: 1px dashed var(--rule); padding: 4px 0 0; margin-top: 8px; }
+.tm-exec-step-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 120px 1fr;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+  padding: 2px 4px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+}
+.tm-exec-step-head-cell { text-align: left; }
+.tm-exec-step-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.tm-exec-step-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 120px 1fr;
+  gap: 6px;
+  align-items: start;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+/* All step-row textareas share the multi-line look. The frozen ones
+   (.tm-exec-step-ro) get a paper-warm background so it's obvious they
+   can't be edited. */
+.tm-exec-step-step,
+.tm-exec-step-data,
+.tm-exec-step-expected,
+.tm-exec-step-actual,
+.tm-exec-step-note {
+  width: 100%;
+  min-height: 36px;
+  font: inherit; font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper);
+  resize: vertical;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+.tm-exec-step-ro {
+  background: var(--paper-warm) !important;
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+.tm-exec-step-status {
+  font: inherit; font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper);
+  width: 100%;
+  height: 32px;
+  box-sizing: border-box;
+}
+/* Status-coloured backgrounds: only on the picker itself, subtle so it
+   doesn't fight the rest of the row. */
+.tm-exec-step-status[data-status="passed"]  { background: rgba(34, 139, 34, 0.12);  border-color: rgba(34, 139, 34, 0.5); }
+.tm-exec-step-status[data-status="failed"]  { background: rgba(180, 60, 60, 0.12);  border-color: rgba(180, 60, 60, 0.55); }
+.tm-exec-step-status[data-status="blocked"] { background: rgba(230, 180, 50, 0.18); border-color: rgba(180, 130, 30, 0.55); }
+.tm-exec-step-status[data-status="skipped"] { background: rgba(150, 150, 150, 0.14); border-color: rgba(120, 120, 120, 0.45); }
+.tm-exec-step-status[data-status="pending"] { background: var(--paper-warm); border-color: var(--rule); }
+
+/* Outcome section: derived display + override picker. */
+.tm-exec-outcome { border-top: 1px dashed var(--rule); padding: 8px 0 0; margin-top: 8px; }
+.tm-exec-outcome-derived,
+.tm-exec-outcome-override-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+.tm-exec-outcome-derived-label {
+  flex: 0 0 70px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tm-exec-outcome-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+}
+.tm-exec-outcome-pill[data-outcome="passed"]  { background: rgba(34, 139, 34, 0.16); border-color: rgba(34, 139, 34, 0.55); }
+.tm-exec-outcome-pill[data-outcome="failed"]  { background: rgba(180, 60, 60, 0.16); border-color: rgba(180, 60, 60, 0.6); }
+.tm-exec-outcome-pill[data-outcome="blocked"] { background: rgba(230, 180, 50, 0.22); border-color: rgba(180, 130, 30, 0.6); }
+.tm-exec-outcome-pill[data-outcome="skipped"] { background: rgba(150, 150, 150, 0.18); border-color: rgba(120, 120, 120, 0.5); }
+.tm-exec-outcome-override {
+  flex: 0 0 auto;
+  font: inherit; font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper);
+}
+.tm-exec-outcome-override-hint {
+  color: var(--accent);
+  font-style: italic;
+  font-size: 11px;
+}
+
+/* ---------------------------------------------------------------------------
+   SM-48 — Links section in ticket-detail modal
+   --------------------------------------------------------------------------- */
+
+.tm-links {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+.tm-links-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.tm-links-subhead {
+  font-family: "Mona Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  margin: 12px 0 4px;
+}
+.tm-link-row {
+  display: grid;
+  grid-template-columns: auto 1fr 28px;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+}
+.tm-link-row:hover { background: var(--ink-faint-bg, #FAF8F2); border-color: var(--rule); }
+.tm-link-row-readonly { grid-template-columns: auto 1fr; }
+.tm-link-pill {
+  display: inline-block;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 10px;
+  background: var(--ink-faint-bg, #EFEAE0);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.tm-link-pill-backward { font-style: italic; }
+.tm-link-target { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tm-link-key {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-right: 4px;
+}
+.tm-link-missing { color: var(--ink-faint); font-style: italic; }
+.tm-link-title { color: var(--ink); }
+.tm-link-delete {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; line-height: 1;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer; padding: 0;
+}
+.tm-link-delete:hover { color: var(--danger, #B43C3C); border-color: var(--danger, #B43C3C); }
+.tm-links-empty {
+  font-style: italic; font-size: 12px; color: var(--ink-faint); padding: 4px 2px;
+}
+.tm-link-add {
+  margin-top: 6px;
+  padding: 4px 10px;
+  font: inherit; font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.tm-link-add:hover { color: var(--ink); border-style: solid; border-color: var(--ink-faint); }
+
+/* SM-48 (combobox-inline): the Add-Link form lives INSIDE the ticket
+   modal's Links section. No second modal — the ticket the user is editing
+   stays visible. */
+.tm-link-add-wrap { margin-top: 6px; }
+.tm-link-add-form {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 8px 10px; margin-top: 4px;
+  background: var(--paper-warm, #F7F2E8);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.tm-link-add-row { display: grid; grid-template-columns: 60px 1fr; gap: 10px; align-items: center; }
+.tm-link-add-row .tm-label { font-size: 12px; color: var(--ink-soft); margin: 0; }
+.tm-link-add-row select.tm-add-link-type {
+  font: inherit; font-size: 13px;
+  padding: 4px 22px 4px 8px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+.tm-link-combo { position: relative; }
+.tm-link-combo input.tm-add-link-filter {
+  font: inherit; font-size: 13px;
+  padding: 4px 8px;
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  box-sizing: border-box;
+}
+.tm-link-combo-popover {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0; right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  z-index: 5;
+}
+.tm-link-combo-option {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.tm-link-combo-option:hover { background: var(--ink-faint-bg, #F0EBE0); }
+.tm-link-add-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.tm-link-add-actions .btn { font-size: 12px; padding: 4px 12px; }
+.tm-link-add-submit { background: var(--accent, #0F5F4F); color: var(--paper); border-color: var(--accent, #0F5F4F); }
+.tm-link-add-submit:hover { filter: brightness(0.93); }
+
+/* ---------------------------------------------------------------------------
+   E21.D — Settings view
+   --------------------------------------------------------------------------- */
+
+/* E23.B — Settings as an overlay over Map/Kanban (no longer a third view).
+   Fixed full-screen, paper-tinted backdrop, close-X in the top-right. */
+#settings-host.vs-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  padding: 24px 32px;
+  overflow-y: auto;
+  background: rgba(245,241,234,0.96);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+#settings-host[hidden] { display: none; }
+.vs-overlay-close {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  z-index: 91;
+  width: 32px;
+  height: 32px;
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.vs-overlay-close:hover {
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+.vs-overlay-content {
+  /* Wide enough to host 5 board columns side-by-side at 200px each
+     (5×200 + 4×12 gap = 1048px) with breathing room on the sides. */
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.vs-root {
+  /* Width is governed by the outer .vs-overlay-content (1200px). Don't
+     re-cap it here or the board section can't show 5 columns inline. */
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* SM-41: horizontal tab-bar at the top of .vs-root. Pattern is intentionally
+   its own (.vs-tab-bar / .vs-tab-btn) and NOT shared with .view-toggle from
+   the toolbar — different context, different concerns. Sticky so it stays
+   visible when the user scrolls inside a long section. */
+.vs-tab-bar {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  padding: 4px 0;
+}
+.vs-tab-btn {
+  font: inherit; font-size: 13px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 120ms, border-color 120ms, background 120ms;
+}
+.vs-tab-btn:hover { color: var(--ink); background: var(--paper-warm); }
+.vs-tab-btn.active {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+.vs-section {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper);
+}
+/* SM-41: explicit hide for tab-inactive sections. The HTML5 `hidden`
+   attribute should imply `display:none`, but in a flex-column container
+   browsers occasionally still reserve flex-line space / gap for hidden
+   children. Force display:none so only one card is visible at a time —
+   anything else makes the tabs feel like anchor links instead of real
+   tabs. */
+.vs-section[hidden] { display: none !important; }
+.vs-section-header {
+  padding: 16px 20px 8px;
+  border-bottom: 1px solid var(--rule);
+}
+.vs-section-header h2 {
+  margin: 0 0 4px;
+  font-family: "Libre Caslon Text", Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.vs-section-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.vs-section-body {
+  padding: 16px 20px;
+}
+.vs-placeholder {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+.vs-empty {
+  text-align: center;
+  margin: 64px 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   E21.E — Status editor in Settings view
+   --------------------------------------------------------------------------- */
+
+.vs-status-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vs-status-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.vs-status-row {
+  display: grid;
+  grid-template-columns: 20px 1fr 160px 28px;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.vs-status-row:hover { background: var(--ink-faint-bg, #FAF8F2); border-color: var(--rule); }
+.vs-status-row.vs-status-drop-target { box-shadow: inset 0 3px 0 var(--accent); }
+.vs-status-row.sm-dragging { opacity: 0.4; }
+.vs-status-row .vs-grip {
+  color: var(--ink-faint);
+  cursor: grab;
+  user-select: none;
+  font-size: 12px;
+  text-align: center;
+}
+.vs-status-row input.vs-status-name {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink);
+}
+.vs-status-row input.vs-status-name:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--paper);
+}
+.vs-status-row select.vs-status-category {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 24px 3px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  text-transform: capitalize;
+  appearance: auto;
+}
+.vs-status-row button.vs-status-delete {
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.vs-status-row button.vs-status-delete:hover {
+  color: var(--danger, #B43C3C);
+  border-color: var(--danger, #B43C3C);
+}
+.vs-status-add {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.vs-status-add:hover { color: var(--ink); border-style: solid; border-color: var(--ink-faint); }
+
+/* ---------------------------------------------------------------------------
+   E21.F — Transition editor in Settings view
+   --------------------------------------------------------------------------- */
+
+.vs-subhead {
+  font-family: "Mona Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  margin: 20px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--rule);
+}
+.vs-subhead:first-child { margin-top: 0; }
+
+/* SM-107 — read-only "Rules per type" list */
+.vs-rules-type { margin-bottom: 18px; }
+.vs-rules-list { list-style: none; margin: 0; padding: 0; }
+.vs-rules-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.vs-rules-item.inactive { color: var(--ink-soft); opacity: 0.7; }
+.vs-rules-state { width: 1em; text-align: center; flex: 0 0 auto; }
+.vs-rules-item.active .vs-rules-state { color: var(--accent); }
+.vs-rules-id {
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: var(--paper-dim, rgba(0,0,0,0.04));
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+.vs-rules-label { flex: 1 1 auto; }
+.vs-rules-na {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ink-soft);
+  flex: 0 0 auto;
+}
+
+.vs-transition-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vs-transition-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vs-transition-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+}
+.vs-transition-row:hover { border-color: var(--ink-faint); }
+.vs-transition-row.vs-transition-drop-target { box-shadow: inset 0 3px 0 var(--accent); }
+.vs-transition-row.sm-dragging { opacity: 0.4; }
+
+.vs-transition-header {
+  display: grid;
+  grid-template-columns: 20px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+}
+.vs-transition-header .vs-grip {
+  color: var(--ink-faint);
+  cursor: grab;
+  user-select: none;
+  text-align: center;
+  font-size: 12px;
+}
+.vs-transition-row input.vs-transition-name {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink);
+}
+.vs-transition-row input.vs-transition-name:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--paper);
+}
+.vs-transition-row button.vs-transition-delete {
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  width: 24px; height: 24px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.vs-transition-row button.vs-transition-delete:hover {
+  color: var(--danger, #B43C3C);
+  border-color: var(--danger, #B43C3C);
+}
+
+.vs-transition-body {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-left: 28px;   /* align with name input after grip */
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.vs-transition-arrow { font-size: 14px; color: var(--ink-faint); }
+.vs-transition-row select.vs-transition-target,
+.vs-transition-row select.vs-transition-gate {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 24px 3px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink);
+  appearance: auto;
+}
+.vs-transition-gate-label { color: var(--ink-faint); }
+
+.vs-transition-any-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.vs-transition-any-wrap input[type="checkbox"] { accent-color: var(--accent); }
+
+.vs-transition-sources {
+  padding-left: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.vs-transition-sources[hidden] { display: none; }
+.vs-transition-sources .vs-transition-source-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.vs-transition-sources input[type="checkbox"] { accent-color: var(--accent); }
+
+.vs-transition-add {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.vs-transition-add:hover { color: var(--ink); border-style: solid; border-color: var(--ink-faint); }
+
+/* ---------------------------------------------------------------------------
+   E21.G — Board (Kanban-Column) editor in Settings view
+   --------------------------------------------------------------------------- */
+
+.vs-board-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.vs-board-unassigned {
+  padding: 10px 12px;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  background: rgba(218,215,209,0.18);
+}
+.vs-board-unassigned-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.vs-board-unassigned.vs-board-drop-target {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  background: var(--accent-soft, rgba(15,95,79,0.06));
+}
+
+.vs-board-columns {
+  /* Wrap columns at fixed 200px so a row that breaks (e.g. 6th column on
+     a 1200px-wide overlay) doesn't stretch to fill the remaining row —
+     it keeps the same lane width as every sibling. */
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  /* Pin row direction so the start-aligned items wrap cleanly. */
+  align-items: flex-start;
+}
+.vs-board-column {
+  flex: 0 0 200px;        /* don't grow, don't shrink — uniform lane width */
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+}
+.vs-board-column.vs-board-drop-target {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.vs-board-column-header {
+  display: grid;
+  /* minmax(0, 1fr) prevents the input's implicit min-content size from
+     pushing the grid track wider than the lane — without it, a long
+     status name in the input made the delete X overflow the card. */
+  grid-template-columns: minmax(0, 1fr) 24px;
+  gap: 8px;
+  align-items: center;
+}
+.vs-board-column input.vs-board-column-name {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink);
+  /* Belt-and-suspenders with the grid track above: tell the input it's
+     OK to be narrower than its content. */
+  min-width: 0;
+  width: 100%;
+}
+.vs-board-column input.vs-board-column-name:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--paper);
+}
+.vs-board-column button.vs-board-column-delete {
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  width: 22px;
+  height: 22px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.vs-board-column button.vs-board-column-delete:hover {
+  color: var(--danger, #B43C3C);
+  border-color: var(--danger, #B43C3C);
+}
+
+.vs-board-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 30px;
+  padding: 4px;
+  border: 1px dashed transparent;
+  border-radius: 3px;
+}
+.vs-board-column .vs-board-chips:empty::before {
+  content: "Drop a status here";
+  color: var(--ink-faint);
+  font-style: italic;
+  font-size: 11px;
+  padding: 2px 4px;
+}
+.vs-board-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  cursor: grab;
+}
+.vs-board-chip.sm-dragging { opacity: 0.4; }
+.vs-board-empty {
+  font-style: italic;
+  font-size: 11px;
+  color: var(--ink-faint);
+  padding: 2px 4px;
+}
+
+.vs-board-add-column {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.vs-board-add-column:hover { color: var(--ink); border-style: solid; border-color: var(--ink-faint); }
+
+/* ---------------------------------------------------------------------------
+   E24 — card animations for MCP/WS-driven changes (FLIP + pulse)
+   --------------------------------------------------------------------------- */
+
+/* Pulse: brief accent-toned glow on cards whose non-position fields just
+   changed via an external commit (MCP, second browser, …). Matches the
+   --accent green so it stays on-theme; rendered with box-shadow so it
+   doesn't shift layout. */
+@keyframes sm-card-flash {
+  0%   { box-shadow: 0 0 0 0     rgba(15, 95, 79, 0.0);  }
+  20%  { box-shadow: 0 0 0 6px   rgba(15, 95, 79, 0.35); }
+  100% { box-shadow: 0 0 0 12px  rgba(15, 95, 79, 0.0);  }
+}
+/* SM-20: the pulse must reach every entity type that the Story-Map renderer
+   registers for animation (tickets/epics/process-steps/releases). Until this
+   was widened, only `.sm-story-card.sm-card-flash` triggered the keyframe,
+   so MCP-driven moves on epic cards, backbone columns, and release rows
+   looked like instant rerenders. The .sm-card-flash class is the single
+   write-target the card-animate helper uses; binding the keyframe to it
+   generically covers everything. */
+.sm-card-flash {
+  animation: sm-card-flash 900ms ease-out;
+}
+
+/* The FLIP helper sets inline `transform: translate(...)` + `transition`,
+   so no CSS rule is needed beyond willChange for performance — but we
+   don't add will-change globally to avoid GPU layer thrash. */
+
+/* ---------------------------------------------------------------------------
+   SM-47 — Link-Types editor in Settings view
+   --------------------------------------------------------------------------- */
+
+.vs-linktypes-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vs-linktype-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr 140px 36px 28px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.vs-linktype-row:hover { background: var(--ink-faint-bg, #FAF8F2); border-color: var(--rule); }
+.vs-linktype-row.vs-linktype-head:hover { background: transparent; border-color: transparent; }
+.vs-linktype-head {
+  font-family: "Mona Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  padding-bottom: 2px;
+}
+.vs-linktype-head .vs-linktype-id { color: var(--ink-soft); cursor: default; }
+.vs-linktype-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}
+.vs-linktype-row input.vs-linktype-label,
+.vs-linktype-row input.vs-linktype-inverse {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink);
+  width: 100%;
+  box-sizing: border-box;
+}
+.vs-linktype-row input.vs-linktype-label:hover,
+.vs-linktype-row input.vs-linktype-inverse:hover { border-color: var(--rule); }
+.vs-linktype-row input.vs-linktype-label:focus,
+.vs-linktype-row input.vs-linktype-inverse:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--paper);
+}
+.vs-linktype-row select.vs-linktype-semantic {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 24px 4px 8px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  color: var(--ink);
+}
+.vs-linktype-row input.vs-linktype-color {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+}
+.vs-linktype-row button.vs-linktype-delete {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+}
+.vs-linktype-row button.vs-linktype-delete:hover {
+  color: var(--danger, #B33A3A);
+  border-color: var(--danger, #B33A3A);
+}
+.vs-linktype-col-label { font: inherit; }
+
+.vs-linktype-add-wrap { margin-top: 8px; }
+.vs-linktype-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.vs-linktype-add:hover { color: var(--ink); border-style: solid; border-color: var(--ink-faint); }
+
+/* ---------------------------------------------------------------------------
+   SM-7 — Ticket-Types editor in Settings view
+   --------------------------------------------------------------------------- */
+
+.vs-tickettypes-editor { display: flex; flex-direction: column; gap: 4px; }
+.vs-tickettype-rows { display: flex; flex-direction: column; gap: 4px; }
+.vs-tickettype-row {
+  display: grid;
+  grid-template-columns: 20px 1fr 28px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.vs-tickettype-row:hover { background: var(--ink-faint-bg, #FAF8F2); border-color: var(--rule); }
+.vs-tickettype-row.vs-tickettype-drop-target { box-shadow: inset 0 3px 0 var(--accent); }
+.vs-tickettype-row.sm-dragging { opacity: 0.4; }
+.vs-tickettype-row input.vs-tickettype-name {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink);
+}
+.vs-tickettype-row input.vs-tickettype-name:hover { border-color: var(--rule); }
+.vs-tickettype-row input.vs-tickettype-name:focus {
+  outline: none; border-color: var(--accent); background: var(--paper);
+}
+.vs-tickettype-row button.vs-tickettype-delete {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; line-height: 1;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer; padding: 0;
+}
+.vs-tickettype-row button.vs-tickettype-delete:hover {
+  color: var(--danger, #B33A3A); border-color: var(--danger, #B33A3A);
+}
+.vs-tickettype-add, .vs-label-add {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 8px; padding: 4px 10px;
+  font: inherit; font-size: 11px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.vs-tickettype-add:hover, .vs-label-add:hover {
+  color: var(--ink); border-style: solid; border-color: var(--ink-faint);
+}
+
+/* ---------------------------------------------------------------------------
+   SM-8 — Labels editor in Settings view
+   --------------------------------------------------------------------------- */
+
+.vs-labels-editor { display: flex; flex-direction: column; gap: 4px; }
+.vs-label-rows { display: flex; flex-direction: column; gap: 4px; }
+.vs-label-row {
+  display: grid;
+  grid-template-columns: 20px 18px 1fr 36px 28px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.vs-label-row:hover { background: var(--ink-faint-bg, #FAF8F2); border-color: var(--rule); }
+.vs-label-row.vs-label-drop-target { box-shadow: inset 0 3px 0 var(--accent); }
+.vs-label-row.sm-dragging { opacity: 0.4; }
+.vs-label-swatch {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  display: inline-block;
+}
+.vs-label-row input.vs-label-name {
+  font: inherit; font-size: 13px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink);
+}
+.vs-label-row input.vs-label-name:hover { border-color: var(--rule); }
+.vs-label-row input.vs-label-name:focus {
+  outline: none; border-color: var(--accent); background: var(--paper);
+}
+.vs-label-row input.vs-label-color {
+  width: 32px; height: 24px;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+}
+.vs-label-row button.vs-label-delete {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; line-height: 1;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer; padding: 0;
+}
+.vs-label-row button.vs-label-delete:hover {
+  color: var(--danger, #B33A3A); border-color: var(--danger, #B33A3A);
+}
+
+.vs-empty { color: var(--ink-faint); font-style: italic; padding: 6px 2px; font-size: 12px; }
+
+/* ============================================================
+   SM-50 — Dependencies View
+   ============================================================ */
+
+#deps-host {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: var(--paper);
+}
+.deps-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.deps-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-warm, var(--paper));
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.deps-toolbar select,
+.deps-toolbar input[type="search"] {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.deps-toolbar input[type="search"] {
+  min-width: 220px;
+}
+.deps-canvas {
+  flex: 1;
+  overflow: auto;
+  padding: 0;
+  position: relative;   /* SM-161: coordinate root for SVG edges + HTML nodes */
+}
+.deps-svg {
+  display: block;
+  font-family: inherit;
+}
+
+/* ----- Nodes: the SHARED story-cards (SM-161) --------------- */
+/* The .deps-node wrapper is absolutely positioned (inline left/top/width) and
+   carries the hover/critical/band hooks; the .sm-story-card inside provides the
+   visuals (cluster border, status pill, badges) + the ticket-key editor link. */
+.deps-node {
+  transition: opacity 120ms ease, filter 120ms ease;
+}
+.deps-node .sm-story-card { width: 100% !important; box-sizing: border-box; }
+
+/* ----- Hover-highlight: ring the hovered + its up/down chain ----- */
+.deps-node-hovered .sm-story-card {
+  box-shadow: 0 0 0 2px var(--accent, #0F5F4F), 0 2px 8px rgba(15,95,79,0.18);
+}
+.deps-node-pred .sm-story-card { box-shadow: 0 0 0 2px #6B8E9B; }
+.deps-node-succ .sm-story-card { box-shadow: 0 0 0 2px #B88B4A; }
+/* Dim non-neighbours only while a node is ACTIVELY hovered (JS toggles
+   .deps-hover-active on the canvas). Edges sit in the gaps, not behind card
+   bodies, so a light opacity fade reads cleanly. */
+.deps-canvas.deps-hover-active .deps-node:not(.deps-node-hovered):not(.deps-node-pred):not(.deps-node-succ) {
+  opacity: 0.4;
+}
+
+/* ----- Edges ----------------------------------------------- */
+/* SM-64-followup: no opacity on edges either — opacity blends edges that
+   pass behind nodes "through" them visually. Use a mid-tone stroke colour
+   as the baseline; semantic-class strokes override per type. */
+.deps-edge {
+  stroke: #C2B9A5;
+  transition: stroke 120ms ease, stroke-width 120ms ease;
+}
+.deps-edge-active {
+  stroke-width: 2.5;
+}
+/* Semantic-driven dashes/colour for read-at-a-glance. */
+.deps-edge-precedence  { stroke: var(--accent, #0F5F4F); }
+.deps-edge-blocking    { stroke: #B85C5C; stroke-dasharray: 6 4; }
+.deps-edge-sequence    { stroke: var(--accent, #0F5F4F); stroke-dasharray: 2 4; }
+.deps-edge-containment { stroke: #B9A0B5; }
+.deps-edge-validation  { stroke: #2E4665; stroke-dasharray: 4 3; }
+.deps-edge-freeform    { stroke: #C2B9A5; }
+/* Dimmed semantic strokes when SVG is in hover-active mode + edge is
+   not part of the highlighted closure. Pure colour shift, no opacity. */
+.deps-canvas.deps-hover-active .deps-edge:not(.deps-edge-active):not(.deps-edge-critical) {
+  stroke: #D8D1BE;
+}
+
+/* ---------------------------------------------------------------------------
+   SM-50 follow-up — Dep-View separator + isolated-band styling
+   --------------------------------------------------------------------------- */
+
+.deps-band-separator { stroke: #C7BFAE; }
+.deps-band-separator-label {
+  font-family: "Mona Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  fill: var(--ink-soft, #717071);
+}
+
+/* SM-161: isolated nodes read dimmer than the connected backbone (the card
+   itself is unchanged; the wrapper mutes it). */
+.deps-node-band-isolated { opacity: 0.72; }
+
+/* ---------------------------------------------------------------------------
+   SM-64 — Analysis controls in the deps-toolbar + critical-path highlight
+   --------------------------------------------------------------------------- */
+
+/* Critical-path overlay: a warm red ring around the card + a thick red edge so
+   the chain reads through everything. SM-161: ring the card via box-shadow. */
+.deps-node-critical .sm-story-card {
+  box-shadow: 0 0 0 3px #B85C5C, 0 2px 8px rgba(184,92,92,0.18);
+}
+.deps-edge-critical {
+  stroke: #B85C5C !important;
+  stroke-width: 2.5 !important;
+}
+
+/* SM-64-followup: containing epic of any critical-path ticket — dashed-ish
+   red accent so it reads as "context" rather than "on the path". */
+.deps-node-critical-context .sm-story-card {
+  box-shadow: 0 0 0 2px rgba(184,92,92,0.55);
+}
+
+/* ----- Status / type legend ------------------------------------------ */
+.deps-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  padding-right: 8px;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+.deps-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.deps-legend-swatch {
+  display: inline-block;
+  width: 14px; height: 10px;
+  border-radius: 3px;
+  background: var(--paper);
+  border: 2px solid var(--rule);
+  box-sizing: border-box;
+}
+.deps-legend-swatch.legend-todo     { border-color: #B0AAA0; }
+.deps-legend-swatch.legend-doing    { border-color: var(--accent, #0F5F4F); }
+.deps-legend-swatch.legend-blocked  { border-color: #B85C5C; }
+.deps-legend-swatch.legend-done     { border-color: #4F7A4F; background: #F0EBE0; }
+.deps-legend-swatch.legend-critical { border-color: #B85C5C; border-width: 3px; }
+.deps-legend-swatch.legend-context  { border-color: #B85C5C; border-style: dashed; }
+
+/* Vertical hairline between toolbar control groups. Inherits the same rule
+   colour as everything else in the toolbar. */
+.deps-toolbar .deps-toolbar-divider {
+  display: inline-block;
+  width: 1px;
+  align-self: stretch;
+  background: var(--rule);
+  margin: 4px 4px;
+}
+
+/* Buttons in the deps-toolbar — match the .btn convention but live in their
+   own namespace so they don't bleed into the main toolbar styling. */
+.deps-toolbar-action {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+.deps-toolbar-action:hover {
+  background: var(--paper-warm, var(--paper));
+}
+.deps-toolbar-action.toggled {
+  background: var(--accent, #0F5F4F);
+  color: var(--paper);
+  border-color: var(--accent, #0F5F4F);
+}
+
+/* ---------------------------------------------------------------------------
+   SM-9 — Type Config editor in Settings view
+   --------------------------------------------------------------------------- */
+
+.vs-typeconfig-editor { display: flex; flex-direction: column; gap: 14px; }
+.vs-typeconfig-picker-row {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+.vs-typeconfig-picker-row .tm-label { font-size: 12px; color: var(--ink-soft); margin: 0; }
+.vs-typeconfig-type-select {
+  font: inherit; font-size: 13px;
+  padding: 4px 22px 4px 8px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  max-width: 280px;
+}
+
+.vs-typeconfig-flags { display: flex; flex-direction: column; gap: 10px; }
+.vs-typeconfig-flag {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+}
+.vs-typeconfig-flag-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.vs-typeconfig-flag-input { margin: 0; cursor: pointer; }
+.vs-typeconfig-flag-text { color: var(--ink); }
+.vs-typeconfig-flag-hint {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-left: 22px;
+}
+.vs-typeconfig-flag-locked { background: var(--ink-faint-bg, #FAF8F2); }
+.vs-typeconfig-flag-locked .vs-typeconfig-flag-label { cursor: not-allowed; opacity: 0.7; }
+.vs-typeconfig-flag-locked-note {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ink-faint);
+  margin-left: 22px;
+}
+
+/* SM-71: Test-Execution starter dialog. */
+.tm-test-exec-host { padding: 4px 0; }
+.tm-test-exec-banner {
+  background: var(--danger-soft, #FBE3E3);
+  color: var(--danger, #B43C3C);
+  border: 1px solid var(--danger, #B43C3C);
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.tm-test-exec-empty {
+  padding: 16px;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-style: italic;
+}
+.tm-test-exec-def-select,
+.tm-test-exec-env {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  font: inherit; font-size: 12px;
+  color: var(--ink);
+}
+.tm-test-exec-def-select:focus,
+.tm-test-exec-env:focus { outline: none; border-color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+ * Full-page ticket editor (Epic B). SM-117 page + SM-118 content-first layout:
+ * the description gets the main column; type/status/position/labels/links sit in
+ * a meta sidebar. Reuses the .tm-* form controls from the modal (shared
+ * builders), so the visual hierarchy can be adopted by the modal too.
+ * ------------------------------------------------------------------------- */
+.te-page { background: var(--paper); }
+/* SM-160: the editor is a normal scrolling DOCUMENT, not the board's fixed
+   100vh grid. The global `body { height:100vh; overflow:hidden; display:grid }`
+   and `main { overflow:hidden }` (board chrome) would otherwise clip a long
+   description with no scrollbar. Override both for this page. */
+body.te-page { display: block; height: auto; min-height: 100vh; overflow: visible; }
+main.te-host { display: block; overflow: visible; max-width: 1080px; margin: 0 auto; padding: 22px 24px 72px; }
+.te-root { display: block; }
+.te-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+.te-back { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 600; }
+.te-back:hover { text-decoration: underline; }
+.te-key { font-size: 12px; color: var(--ink-soft); font-weight: 700; letter-spacing: 0.04em; }
+
+/* SM-122/B7: the modal title is a link to the full-page editor. */
+.tm-fullpage-link { color: inherit; text-decoration: none; }
+.tm-fullpage-link:hover { text-decoration: underline; }
+.tm-fullpage-icon { color: var(--ink-soft); font-size: 0.65em; vertical-align: super; }
+
+/* SM-158: board ticket-key links to the full-page editor (cards + epics). */
+.sm-key-link { color: inherit; text-decoration: none; cursor: pointer; }
+.sm-key-link:hover { text-decoration: underline; color: var(--accent); }
+.te-missing { padding: 40px 0; color: var(--ink-soft); font-size: 14px; }
+
+/* Two-pane content-first grid. Collapses to one column on narrow viewports. */
+.te-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 28px;
+  align-items: start;
+}
+@media (max-width: 820px) { .te-layout { grid-template-columns: 1fr; } }
+
+.te-main { min-width: 0; display: block; }
+.te-side {
+  display: block;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: var(--paper-soft, rgba(0,0,0,0.015));
+  position: sticky; top: 16px;
+}
+
+/* Title hero — borderless, large, label hidden, WRAPS full width (textarea). */
+.te-title-row { display: block; margin: 0 0 14px; }
+.te-title-row .tm-label { display: none; }
+.te-title-row .tm-input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  font-size: 24px; font-weight: 700; line-height: 1.25;
+  color: var(--ink);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 6px; margin-left: -6px;
+  background: transparent;
+}
+/* The textarea variant wraps + auto-grows (set by buildTitleField). */
+.te-title-row textarea.tm-input {
+  resize: none; overflow: hidden;
+  white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word;
+  min-height: 0;
+}
+.te-title-row .tm-input:hover  { border-color: var(--rule); }
+.te-title-row .tm-input:focus  { border-color: var(--ink); background: var(--paper); }
+
+/* The description is the hero block in the main column. */
+.te-main .tm-row:has(.tm-description-edit) { flex-direction: column; align-items: stretch; }
+.te-main .tm-row:has(.tm-description-edit) > .tm-label {
+  flex: none; margin-bottom: 4px; font-weight: 600; color: var(--ink-soft);
+}
+.te-main .tm-description-edit { min-height: 160px; }
+.te-main .tm-desc-actions { margin-left: 0; }
+
+/* Sidebar fields stack (label above control) so they fit the narrow column. */
+.te-side .tm-row { flex-direction: column; align-items: stretch; gap: 3px; margin: 0 0 12px; }
+.te-side .tm-label { flex: none; font-weight: 600; }
+.te-side .tm-field-hint { margin-left: 0; }
+.te-side .tm-links { margin-top: 4px; }
+/* SM-244: editor action row (Delete + Cancel). */
+.te-side-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+.te-side-actions .btn { flex: 1; }
+
+/* SM-203 R-7 — Requirements module view (DOORS-style multi-column document).
+   Full-page view (like Map / Kanban / Dependencies), not an overlay. */
+#requirements-view-host { padding: 18px 24px; }
+/* SM-206: full page width — the document should use the whole view area. */
+.vr-root { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.vr-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.vr-title { font-family: "Libre Caslon Text", Georgia, serif; font-size: 20px; }
+.vr-module-picker { font: inherit; font-size: 12px; padding: 4px 8px; border: 1px solid var(--rule);
+  border-radius: 4px; background: var(--paper); }
+.vr-note { font-size: 11px; color: var(--ink-soft); }
+.vr-note-ok { color: #3D5639; }
+.vr-note-warn { color: #7A3E26; }
+.vr-empty, .vr-reqs-empty { color: var(--ink-soft); font-size: 13px; padding: 16px 0; }
+.vr-summary { display: flex; flex-wrap: wrap; gap: 6px; }
+.vr-chip { font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--rule); }
+.vr-chip-total { background: var(--paper-warm); }
+
+/* The document: a scrollable multi-column grid (Source | ID | Requirement |
+   Coverage). Text columns stay pure; ID + Coverage are separate attributes. */
+.vr-grid { display: grid; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper);
+  max-height: 72vh; overflow: auto; }
+/* SM-206: Source default WIDER than Requirement; both flexible, ID + Coverage
+   fixed. The inline gridTemplateColumns (set by the resizer) overrides this. */
+.vr-grid-doc  { grid-template-columns: 0.6fr 52px 0.4fr 112px; }
+.vr-grid-list { grid-template-columns: 52px minmax(0,1fr) 112px; }
+/* Draggable Source/Requirement divider on the Source header cell. */
+.vr-th-resizable { position: relative; }
+.vr-resizer {
+  position: absolute; top: 0; right: -4px; width: 8px; height: 100%;
+  cursor: col-resize; z-index: 3; touch-action: none;
+}
+.vr-resizer::after {
+  content: ""; position: absolute; top: 4px; bottom: 4px; left: 3px; width: 2px;
+  background: var(--rule);
+}
+.vr-resizer:hover::after { background: var(--accent); }
+.vr-cell { padding: 7px 12px; min-width: 0; }
+.vr-th { position: sticky; top: 0; z-index: 1; background: var(--paper-warm);
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+/* A section's first row gets a top rule that spans all columns. */
+.vr-section-start { border-top: 1px solid var(--rule); }
+.vr-grid-doc .vr-th, .vr-grid-list .vr-th { border-top: none; }
+
+.vr-cell-source { background: rgba(15,95,79,0.02); }
+.vr-h { display: flex; align-items: baseline; gap: 8px; }
+.vr-h-path { font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.vr-h-text { font-weight: 700; font-size: 13px; }
+.vr-h1 .vr-h-text { font-size: 15px; }
+.vr-src-prose { font-size: 12.5px; color: var(--ink); white-space: pre-wrap; line-height: 1.5; margin-top: 3px; }
+
+.vr-cell-id { font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.vr-cell-req { font-size: 13px; }
+.vr-req-text { line-height: 1.45; }
+.vr-req-text[contenteditable="true"] { cursor: text; }
+.vr-req-text:focus { outline: 1px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.vr-clickable { cursor: pointer; }
+.vr-clickable:hover { background: rgba(15,95,79,0.04); }
+.vr-cell-req.vr-open { box-shadow: inset 3px 0 0 var(--accent); }
+.vr-cell-cov { white-space: nowrap; }
+.vr-gap-cell { background: rgba(176,56,43,0.06); }
+.vr-gap-text { font-size: 12px; color: #7A3E26; }
+
+/* Expandable detail: traceability chips (clickable → open ticket) + actions. */
+.vr-detail { margin-top: 6px; display: flex; flex-direction: column; gap: 5px; }
+.vr-trace-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.vr-trace-rel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); }
+.vr-trace-chip { display: inline-flex; align-items: baseline; gap: 6px; font: inherit; font-size: 12px;
+  padding: 2px 8px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); cursor: pointer; }
+.vr-trace-chip:hover { border-color: var(--accent); color: var(--accent); }
+.vr-trace-key { font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.vr-action { font: inherit; font-size: 11px; align-self: flex-start; padding: 3px 10px;
+  border: 1px solid var(--accent); border-radius: 4px; background: transparent; color: var(--accent); cursor: pointer; }
+.vr-action:hover { background: var(--accent); color: var(--paper); }
+
+.vr-badge { font-size: 10px; padding: 1px 7px; border-radius: 9px; text-transform: lowercase; white-space: nowrap; }
+.vr-badge-covered { background: #E7EDE3; color: #3D5639; }
+.vr-badge-over-covered { background: #E8EEF5; color: #2E4665; }
+.vr-badge-orphan { background: #F1DCD2; color: #7A3E26; }
+.vr-badge-suspect { background: #EAE0EA; color: #5A3957; }
+
+/* ===========================================================================
+   SM-248/256 — Process-Step editor view (.psv-*). A SECOND surface onto the
+   map: process steps render as cards via the SHARED .sm-story-card component
+   (teal cluster) and reorder with the same dnd mechanic as the item cards.
+   Only the layout chrome + quick-add are PS-specific here — there is NO
+   parallel card style (DRY). The journey is ONE horizontal row; the PAGE
+   (#view-host) scrolls, not the row.
+   =========================================================================== */
+.psv-root { padding: 18px 22px; }
+.psv-header { margin-bottom: 16px; }
+.psv-heading { font-size: 18px; margin: 0 0 4px; }
+.psv-sub { color: var(--ink-soft); font-size: 12px; margin: 0; max-width: 720px; }
+.psv-empty {
+  color: var(--ink-soft); font-size: 13px; padding: 32px;
+  border: 1px dashed var(--rule); border-radius: 6px; text-align: center;
+}
+/* One horizontal row, no wrap. NO overflow here — the row grows to its
+   content width and #view-host (the view scroll container) scrolls the page,
+   so the whole surface moves, not just the strip. */
+.psv-flow {
+  display: flex; flex-wrap: nowrap; gap: 14px; align-items: flex-start;
+  width: max-content;
+}
+/* The step cards wear the SAME colour as the story-map backbone spine (shared
+   --backbone-* tokens): green band + light text. So the two surfaces read as
+   the same process steps — the Map draws them as the header, this view as
+   cards. The `process` cluster carries no own colour; we paint it here. */
+.psv-flow .sm-story-card[data-process-step-id] {
+  background: var(--backbone-bg);
+  border-color: var(--backbone-edge);
+  color: var(--backbone-ink);
+  cursor: grab;
+}
+.psv-flow .sm-story-card[data-process-step-id] .sm-story-title { color: var(--backbone-ink); }
+/* Quick-add: a dashed end-of-row affordance sized like a step card. */
+.psv-quickadd {
+  flex: 0 0 220px; width: 220px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px dashed var(--rule); border-radius: 6px; padding: 10px 12px;
+  background: transparent;
+}
+.psv-quickadd-input {
+  width: 100%; box-sizing: border-box; font-size: 13px;
+  border: 1px solid transparent; background: transparent; padding: 6px 4px; border-radius: 4px;
+}
+.psv-quickadd-input:hover { border-color: var(--rule); }
+.psv-quickadd-input:focus { border-color: var(--accent); background: var(--paper-warm); outline: none; }
+
+/* ===========================================================================
+   SM-274/SM-275: Map-Eingang (Bodenstreifen) — sticky bottom inbox for
+   release-LESS tickets (the work SM-253 dropped from the map; epics can't show
+   in Kanban).
+
+   It is the LAST child of .sm-grid (NOT a sibling of the grid). The grid is
+   `width: max-content` — the full map scroll width — so this plain block child
+   gets `width: auto` = that same width for free: the background spans the whole
+   map with pure CSS, no measured width, and it scrolls horizontally WITH the
+   grid so the background always covers the full width. The card body is a
+   `overflow-x: auto` scroll container, so the cards don't feed back into the
+   grid's max-content width. Row count is viewport-derived (SM-275, JS).
+
+   NOT sticky (SM-276 follow-up): it sits in normal flow BELOW the last release.
+   On a short board the viewport-derived row count fills the space down to the
+   window bottom (no empty gap); on a tall board it sits under the last release
+   and you scroll down to it — it never overlays the release rows.
+   =========================================================================== */
+.sm-tray {
+  background: var(--paper-warm);
+  border-top: 2px solid var(--rule);
+  /* SM-279: the strip is a block child of the width:max-content grid. With
+     width:auto its wide card row fed its own max-content back into the grid,
+     widening it past the process-step columns and breaking the map's horizontal
+     scroll (the user could no longer reach off-screen process steps). Size
+     containment on the inline axis makes the strip's width independent of its
+     content, so it fills the grid width (background still spans) WITHOUT growing
+     it; its own cards scroll inside .sm-tray-body (overflow-x:auto). */
+  contain: inline-size;
+  width: 100%;
+}
+.sm-tray-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+}
+.sm-tray-collapsed .sm-tray-header { border-bottom: none; }
+.sm-tray-toggle {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding: 0 4px;
+  line-height: 1;
+}
+.sm-tray-toggle:hover { color: var(--ink); }
+.sm-tray-title { letter-spacing: -0.01em; }
+.sm-tray-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--rule);
+  color: var(--ink);
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.sm-tray-body {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 12px;
+}
+.sm-tray-grid {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 8px;
+  align-content: start;
+  width: max-content;
+}
+
+/* ===========================================================================
+   SM-282 — Table view (.tv-*): Jira-Issue-Navigator-artige Sicht. Eigene
+   Query-Zeile oben (gleiche SM-187-Sprache wie Smart-Bar + MCP query_tickets),
+   Ergebnis-Tabelle darunter. Spalten kommen aus QUERY_FIELDS — der Renderer
+   kennt keine eigene Feld-Logik.
+   =========================================================================== */
+/* SM-292: full available width (user finding — no max-width cap). */
+.tv-root { padding: 16px 22px; }
+.tv-query-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.tv-query-input {
+  flex: 1;
+  font: 13px ui-monospace, "SF Mono", Menlo, monospace;
+  padding: 7px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper-warm);
+  color: var(--ink);
+}
+.tv-query-input:focus { border-color: var(--accent); outline: none; background: #fff; }
+.tv-query-error {
+  color: var(--danger, #A3352B);
+  font-size: 12px;
+  padding: 4px 2px 8px;
+}
+.tv-table-host { overflow-x: auto; }
+.tv-table {
+  width: 100%;
+  table-layout: fixed;   /* SM-292: colgroup widths rule; title takes the rest */
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #fff;
+  border: 1px solid var(--rule);
+}
+.tv-table thead th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  background: var(--paper-warm);
+  border-bottom: 2px solid var(--rule);
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+.tv-table tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.tv-table tbody td[data-col="key"] { white-space: nowrap; font-weight: 600; color: var(--accent); }
+.tv-table tbody tr { cursor: pointer; }
+.tv-table tbody tr:hover { background: var(--accent-soft, #EDF3F1); }
+.tv-count { color: var(--ink-soft); font-size: 12px; padding: 8px 2px; }
+
+/* SM-283 — column picker panel */
+.tv-columns-btn { flex: 0 0 auto; }
+.tv-columns-panel {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: #fff;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  max-width: 420px;
+}
+.tv-columns-row {
+  display: grid;
+  grid-template-columns: 20px 20px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 2px;
+  font-size: 13px;
+}
+.tv-columns-row:not(.tv-columns-row-active) { grid-template-columns: 20px 1fr; color: var(--ink-soft); }
+.tv-columns-grip { cursor: grab; color: var(--ink-soft); font-size: 11px; }
+.tv-columns-row.tv-columns-drop-target { box-shadow: inset 0 3px 0 0 var(--accent); }
+.tv-columns-row.sm-dragging { opacity: 0.4; }
+.tv-columns-footer { border-top: 1px solid var(--rule); margin-top: 6px; padding-top: 8px; }
+
+/* SM-284 — sortable headers */
+.tv-table thead th { cursor: pointer; user-select: none; }
+.tv-table thead th[data-sort-dir]::after { margin-left: 5px; font-size: 9px; }
+.tv-table thead th[data-sort-dir="asc"]::after  { content: "▲"; }
+.tv-table thead th[data-sort-dir="desc"]::after { content: "▼"; }
+
+/* SM-292 — column resize handles + no-wrap columns */
+.tv-table thead th { position: relative; }
+.tv-resize-handle {
+  position: absolute;
+  top: 0; right: -4px; bottom: 0;
+  width: 9px;
+  cursor: col-resize;
+  z-index: 1;
+}
+.tv-table td[data-col="epic"],
+.tv-table td[data-col="updated"],
+.tv-table td[data-col="created"],
+.tv-table td[data-col="status"] { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tv-table td { overflow: hidden; text-overflow: ellipsis; }
+
+/* SM-293 — Table view: visible column separators + resize affordance,
+   and the global smart-bar row hides while the Table view is active
+   (it has its own query line — two query inputs were confusing). */
+.toolbar-action[hidden] { display: none; }
+.tv-table thead th,
+.tv-table tbody td { border-right: 1px solid var(--rule); }
+.tv-table thead th:last-child,
+.tv-table tbody td:last-child { border-right: none; }
+/* Resize affordance: the handle shows as soon as the header is hovered,
+   not only when the 9px hit zone itself is hit. */
+.tv-table thead th:hover .tv-resize-handle {
+  background: linear-gradient(90deg, transparent 3px, var(--ink-soft) 3px, var(--ink-soft) 5px, transparent 5px);
+  opacity: 0.5;
+}
+.tv-table thead th .tv-resize-handle:hover {
+  background: linear-gradient(90deg, transparent 3px, var(--accent) 3px, var(--accent) 5px, transparent 5px);
+  opacity: 1;
+}
+
+/* SM-289 — ticket-import dialog (.ti-*) */
+.ti-root { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.ti-source { display: flex; flex-direction: column; gap: 8px; }
+.ti-text {
+  font: 12px ui-monospace, "SF Mono", Menlo, monospace;
+  border: 1px solid var(--rule); border-radius: 4px;
+  padding: 8px; background: var(--paper-warm); color: var(--ink);
+  resize: vertical;
+}
+.ti-text:focus { border-color: var(--accent); outline: none; background: #fff; }
+/* SM-298 (review): a hand-enlarged textarea must never squeeze the scroll
+   region to zero and clip the pinned action row. */
+.ti-text { max-height: 40vh; }
+.ti-mode { display: flex; gap: 18px; font-size: 13px; }
+.ti-mode-opt { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.ti-parse-error { color: var(--danger, #A3352B); font-size: 12px; }
+.ti-summary { font-size: 13px; font-weight: 600; }
+.ti-preview-host { /* SM-298: scrolls inside .ti-scroll, no nested scroller */ }
+.ti-preview { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ti-preview th {
+  text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--ink-soft); border-bottom: 1px solid var(--rule); padding: 4px 6px;
+}
+.ti-preview td { padding: 4px 6px; border-bottom: 1px solid var(--rule); vertical-align: top; overflow-wrap: anywhere; }
+.ti-row-error td { color: var(--danger, #A3352B); }
+.ti-row-create td:nth-child(2) { color: var(--accent); font-weight: 600; }
+.ti-truncated { color: var(--ink-soft); font-size: 12px; padding: 6px 2px; }
+/* SM-298: the import dialog is content-heavy AND resizable — flex column
+   (title + source fixed, ONE scroll region takes the rest, actions pinned),
+   native resize handle bottom-right with sane bounds. */
+#modal-host .modal:has(.ti-root) {
+  width: 820px; max-width: 95vw;
+  min-width: 560px; min-height: 420px;
+  max-height: 92vh;
+  resize: both; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+#modal-host .modal:has(.ti-root) .modal-actions { margin-top: auto; flex: 0 0 auto; }
+
+/* SM-295 — unified import (project branch) + export chooser */
+.ti-project-preview { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper-warm); font-size: 13px; }
+.ti-project-counts { color: var(--ink-soft); }
+.ti-project-conflict { color: var(--danger, #A3352B); font-weight: 600; }
+.ti-destructive { color: var(--danger, #A3352B); }
+.ti-export-info { margin: 12px 0; font-size: 13px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 8px; max-width: 520px; }
+
+/* SM-296 — import column mapping panel */
+.ti-mapping {
+  border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--paper-warm);
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 4px;
+  /* SM-298: no own mini-scroller — .ti-scroll owns the scrolling */
+}
+.ti-mapping-title { font-size: 12px; font-weight: 600; color: var(--ink-soft); margin-bottom: 2px; }
+.ti-mapping-row {
+  display: grid; grid-template-columns: 1fr 200px;
+  align-items: center; gap: 10px; font-size: 12px; cursor: default;
+}
+.ti-mapping-raw { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, Menlo, monospace; }
+.ti-mapping-select { font-size: 12px; padding: 2px 4px; border: 1px solid var(--rule); border-radius: 3px; background: #fff; }
+.ti-unused { color: var(--ink-soft); font-size: 12px; padding: 6px 2px; }
+
+/* SM-298 — resizable import dialog: one scroll region over mapping + preview */
+.ti-root { flex: 1 1 auto; min-height: 0; }
+.ti-scroll {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ti-mapping-value-row { padding-left: 26px; }
+.ti-mapping-value-row .ti-mapping-raw { color: var(--ink-soft); }

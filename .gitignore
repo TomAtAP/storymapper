@@ -1,0 +1,17 @@
+node_modules/
+.storymap-data/
+*.tmp
+*.log
+.DS_Store
+.claude/
+
+# User-saved fixtures (built-ins live next to user/)
+fixtures/user/*
+!fixtures/user/.gitkeep
+.storymap-smoke-data/
+
+# Internal Claude Code project handoff — not part of the public release
+CLAUDE.md
+
+# Internal working notes — not part of the public release
+STORYMAP-FINDINGS.md
