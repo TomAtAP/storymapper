@@ -100,13 +100,29 @@ sends `JSON.stringify({ jsonrpc:"2.0", id, method, params }) + "\n"`.
 - `notifications/initialized` — client signals it is ready; we accept + ignore.
 - (We send none today; keep the door open for `notifications/tools/list_changed`.)
 
-### 4.3 Errors (JSON-RPC error object)
+### 4.3 Errors — two channels (verified against the real SDK subprocess)
 
-- `-32700` parse error, `-32600` invalid request, `-32601` method not found,
-  `-32602` invalid params (Zod validation failure on `tools/call` arguments, or
-  unknown tool name), `-32603` internal error.
-- A handler that **throws** → `-32603` (should be rare; tool-level failures use
-  `isError` instead).
+The current SDK does NOT map every failure to a JSON-RPC error. Driving the real
+`storymap mcp` subprocess shows two distinct channels — the native frontend MUST
+match both, or the client-visible failure shape changes silently (no existing
+test covers these paths):
+
+**JSON-RPC error object** — only for genuine PROTOCOL faults on the envelope:
+- `-32700` parse error (a malformed JSON line), `-32600` invalid request,
+  `-32601` method not found (an unknown top-level method — i.e. not one of
+  `initialize` / `tools/list` / `tools/call` / `ping`).
+
+**`isError` tool-RESULT** — for everything that happens INSIDE `tools/call`:
+- unknown tool name, failed argument validation, AND a handler that **throws**
+  → a normal `{ result: { isError: true, content: [{ type:"text", text }] } }`.
+  The SDK renders all three as tool results (not JSON-RPC errors), so the agent
+  still receives a structured body. `ping` → `{}`.
+
+Mechanism: `registry.dispatch` THROWS `ToolError(UNKNOWN_TOOL|INVALID_PARAMS)`
+and lets handler rejections propagate; the **stdio frontend catches both and
+renders an `isError` result** (§5.1). A CLI frontend maps the same throws to a
+non-zero exit + stderr — which is exactly why the registry throws typed errors
+instead of pre-rendering an MCP result.
 
 ### 4.4 Protocol version
 
@@ -144,6 +160,42 @@ The key design move (enables the CLI idea, SM-304, and the extraction, SM-305):
   bus-forwarder (E20.E) moves into the stdio frontend (it is process/transport
   concern, not tool concern) or stays alongside the registry builder — decide in
   SM-303.
+
+### 5.1 stdio-frontend obligations (SM-309)
+
+The core leaves these to the frontend; miss one and behaviour changes silently
+(the existing round-trip test cannot catch any of them):
+
+1. **Catch everything from `dispatch`.** Wrap every `dispatch` call in
+   try/catch and convert `ToolError` AND handler rejections into `isError` tool
+   results (§4.3). If a rejection escapes the read loop, `index.js`'s
+   `unhandledRejection` handler runs `stop()` and the MCP process **exits** — a
+   transient storage error inside a read tool would kill the server. Many read
+   handlers and `project_create` / `project_delete` / `attachment_*` throw
+   rather than return `fail()`; today the SDK's try/catch absorbs that.
+2. **Non-blocking dispatch, out-of-order responses.** Do NOT `await` a handler
+   before reading the next line. `request_switch_project` awaits up to ~125 s
+   (`wait_seconds` ≤ 120 + safety); a serial loop would freeze the whole server
+   for every other tool call meanwhile. Dispatch each request concurrently and
+   write each id-matched response when its promise settles — exactly what the
+   SDK's stdio transport does.
+3. **Preserve the notify-change forwarder (E20.E).** The `bus.on("change")` →
+   POST `/api/internal/notify-change` bridge is what makes MCP writes appear
+   live in the browser. `buildRegistry(storage, opts)` must thread
+   `opts.httpUrl` / `opts.fetchImpl` into BOTH the forwarder and
+   `request_switch_project`'s closures. Its loss is invisible to the stdio test
+   (the only forwarder tests are in-process).
+4. **Lifecycle contract.** `runStdio(storage, opts)` must still return
+   `{ transport }` with an **idempotent** `close()` that stops reading stdin and
+   ends output; the `connect(registry)` equivalent wires transport → dispatch and
+   starts the read loop. `index.js` calls `transport.close()` on stdin `end` and
+   in `installShutdown`.
+5. **stdout framing invariant.** Write exactly one JSON-RPC envelope per line:
+   `stdout.write(JSON.stringify(envelope) + "\n")` — stringify the WHOLE envelope
+   (so the pretty-printed newlines inside `content[].text` are escaped to `\n`),
+   never concatenate pre-serialized fragments. All diagnostics stay on stderr —
+   any stray stdout write corrupts the stream. (Currently clean: no
+   `console.log` / `process.stdout.write` anywhere in the tool/core chain.)
 
 ## 6. Validation — the zod decision (input to SM-308)
 
