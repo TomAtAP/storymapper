@@ -90,11 +90,36 @@ served from somewhere else it falls back to `localStorage`; you can pin a
 specific server with `?api=<url>`. The page must be served from a loopback origin
 (`localhost` / `127.0.0.1`) — `file://` is not supported (see the security model).
 
-## Use it as an MCP server (Claude Desktop / Claude Code)
+## Connect it to your Claude (one command per surface)
 
-The same package speaks MCP over stdio.
+Storymapper reaches an agent through two parts: the **MCP server** (the tools)
+and the companion **skill** (the working method — the DoR/DoD contract, the
+workflow, when to pull vs. push). Installing one does **not** install the
+other, so the setup commands below always install **both**:
 
-**Claude Desktop** — `~/Library/Application Support/Claude/claude_desktop_config.json`:
+| Surface | Command | What remains |
+|---|---|---|
+| **Claude Code** (CLI) | `npm run install-code` | restart your Claude Code session |
+| **Claude Desktop** | `npm run install-desktop` | upload `dist/storymap-skill.zip` under **Settings → Capabilities → Skills**, then fully restart the app |
+| **claude.ai in the browser** | — | works with remote connectors only; it cannot reach a local server. Use Claude Code or Claude Desktop. |
+
+`npm run install-code` copies the skill to `~/.claude/skills/storymap` and
+registers the MCP server via `claude mcp add` (user scope). If the `claude`
+CLI is unavailable it prints the ready-made command instead.
+
+`npm run install-desktop` writes the server entry into the platform's
+`claude_desktop_config.json` (existing entries survive, a `.bak` backup is
+kept) and builds the skill zip. The skill store in Claude Desktop is managed
+by the app, so the one upload in the UI is the single step no script can do
+for you.
+
+Both commands are idempotent — re-run them after pulling a new Storymapper
+version. `--data-dir=DIR` overrides the data directory (default:
+`<repo>/.storymap-data`).
+
+### Manual setup (other MCP clients, other harnesses)
+
+Any stdio MCP client can run the server with this shape:
 
 ```json
 {
@@ -110,7 +135,15 @@ The same package speaks MCP over stdio.
 }
 ```
 
-**Claude Code** — same shape via `claude mcp add` or in `.claude.json`.
+The skill package (`npm run package-skill` → `dist/storymap-skill.zip`) is
+plain Markdown — `storymap/SKILL.md` plus its `reference/` files. For
+harnesses like Codex, unpack it wherever instructions live and point the
+harness at it, e.g. from an `AGENTS.md`:
+
+```md
+Before planning work on the Storymapper board, read storymap/SKILL.md
+(and the reference/ files it names) and follow that working method.
+```
 
 Point `--data-dir` at the **same** directory the HTTP server uses. Both processes
 can run concurrently against one SQLite file (WAL mode + a busy-timeout);
@@ -119,47 +152,6 @@ the HTTP server relays every MCP write to connected browsers over WebSocket.
 > Only one `storymapper server` may run per data directory (a PID lock refuses a
 > second; `--force` takes over a stale lock after a crash). The MCP process is
 > exempt and may always share the data dir.
-
-### Install the companion skill
-
-The MCP server gives the agent *tools*; the companion **skill** gives it the
-*working method* — the DoR/DoD contract, the workflow, when to pull vs. push.
-Install it so the agent plans the way the board expects.
-
-**Claude Code**
-
-```sh
-npm run install-skill
-# → copies skill/ to ~/.claude/skills/storymap (personal, all projects)
-
-npm run install-skill -- --target=/path/to/repo/.claude/skills
-# → installs into one project's skills directory instead
-```
-
-Re-running the command updates an existing installation in place — do this
-after pulling a new Storymapper version. Restart your Claude session so the
-skill is picked up.
-
-**Claude Desktop**
-
-```sh
-npm run package-skill
-# → builds dist/storymap-skill.zip
-```
-
-Upload the zip in Claude Desktop under **Settings → Capabilities → Skills**.
-Re-run and re-upload after pulling a new version.
-
-**Other harnesses (Codex, …)**
-
-The zip is a plain-Markdown package — `storymap/SKILL.md` plus its
-`reference/` files. Unpack it wherever your harness keeps instructions and
-point the harness at it, e.g. from an `AGENTS.md`:
-
-```md
-Before planning work on the Storymapper board, read storymap/SKILL.md
-(and the reference/ files it names) and follow that working method.
-```
 
 ## Security model (single-user, local)
 
