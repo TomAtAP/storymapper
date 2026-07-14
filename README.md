@@ -100,7 +100,7 @@ other, so the setup commands below always install **both**:
 | Surface | Command | What remains |
 |---|---|---|
 | **Claude Code** (CLI) | `npm run install-code` | restart your Claude Code session |
-| **Claude Desktop** | `npm run install-desktop` | upload `dist/storymap-skill.zip` under **Settings → Capabilities → Skills**, then fully restart the app |
+| **Claude Desktop** | `npm run install-desktop` | upload `dist/storymap-skill.zip` under **Settings → Capabilities → Skills**, then fully restart the app — and use a **Chat** (see below) |
 | **claude.ai in the browser** | — | works with remote connectors only; it cannot reach a local server. Use Claude Code or Claude Desktop. |
 
 `npm run install-code` copies the skill to `~/.claude/skills/storymap` and
@@ -112,6 +112,11 @@ CLI is unavailable it prints the ready-made command instead.
 kept) and builds the skill zip. The skill store in Claude Desktop is managed
 by the app, so the one upload in the UI is the single step no script can do
 for you.
+
+> **Chat, not Cowork.** Claude Desktop reaches local MCP servers from **Chat**
+> conversations only — in **Cowork** mode the Storymapper tools are not
+> available. If Cowork is your default surface, switch to a Chat; when the
+> tools don't show up, this is the first thing to check.
 
 Both commands are idempotent — re-run them after pulling a new Storymapper
 version. `--data-dir=DIR` overrides the data directory (default:
