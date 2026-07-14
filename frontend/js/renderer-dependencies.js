@@ -55,12 +55,13 @@
   // VERTICAL_SPACING_PX  is the in-layer pitch (top-to-bottom of two nodes
   // in the same layer). Both include the node itself + gap.
   const DEPENDENCY_LAYOUT = Object.freeze({
-    // SM-161: nodes are the SHARED story-cards (240px wide). SM-162: tightened
-    // the pitch — the earlier 300/128 made big graphs sprawl. Node-height is
-    // nominal (cards are variable height — edges connect at the nominal center).
-    HORIZONTAL_SPACING_PX:   268,    // 240 card + 28 gap
+    // SM-161: nodes are the SHARED story-cards (280px wide — MUST match
+    // renderer-storymap STORY_CARD_WIDTH_PX so the status/DoR/DoD/link badge row
+    // fits on one line). SM-162: tightened the pitch. Node-height is nominal
+    // (cards are variable height — edges connect at the nominal center).
+    HORIZONTAL_SPACING_PX:   308,    // 280 card + 28 gap
     VERTICAL_SPACING_PX:     104,    // nominal card height + a small gap
-    NODE_WIDTH_PX:           240,    // = STORY_CARD_WIDTH_PX
+    NODE_WIDTH_PX:           280,    // = STORY_CARD_WIDTH_PX (keep the two in sync!)
     NODE_HEIGHT_PX:           88,    // nominal card height (layout + edge anchors)
     CANVAS_PADDING_PX:        24,
     EDGE_STROKE_WIDTH_PX:    1.5,
