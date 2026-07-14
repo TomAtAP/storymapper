@@ -64,9 +64,9 @@
     // BACKBONE_COL_WIDTH_PX is STORY_CARD_WIDTH_PX + 2×CELL_PADDING_PX so
     // cell content area equals the Epic-card width with breathing room.
     //
-    // Story card width: 220 → 240 → 280 per user feedback — wider cards so the
-    // status/DoR/DoD/link badges fit on one line and long titles breathe.
-    STORY_CARD_WIDTH_PX:       280,
+    // Story card width — SINGLE source is rendererCard.CARD_WIDTH_PX, so the
+    // story map and dependency graph can't drift (bumping it there widens both).
+    STORY_CARD_WIDTH_PX:       rendererCard.CARD_WIDTH_PX,
     CELL_PADDING_PX:             4,   // .sm-cell padding (each side); mirrors css
     // SM-159: one grid unit = STORY_CARD (280) + one inter-column gap (8) = 288.
     // A cell with N columns is N units wide; its content is N×280 cards +
@@ -79,7 +79,7 @@
     // gap on the right (user-reported). `.sm-epic-card`/`.sm-loose-card` are
     // flex-shrinkable and `.sm-cell` has overflow-x:auto, so a ≤1px sub-pixel
     // overflow is absorbed without a scrollbar.
-    BACKBONE_COL_WIDTH_PX:     288,
+    BACKBONE_COL_WIDTH_PX:     rendererCard.CARD_WIDTH_PX + 8,   // card + TICKET_GAP_PX (8)
     // SM-272: a collapsed process-step column shrinks to this fixed narrow
     // width (independent of how many epics it holds) — fixes the runaway-wide
     // columns. Its cells show a compact "N epics" indicator instead of cards.

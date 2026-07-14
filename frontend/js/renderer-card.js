@@ -28,6 +28,13 @@
   "use strict";
   if (!dnd) throw new Error("renderer-card: dnd module missing");
 
+  // The canonical story-card width (px). SINGLE source of truth for every view
+  // that renders the shared .sm-story-card — the story map AND the dependency
+  // graph reference this, so widening the card can't drift between views. The
+  // story-map cell/backbone math and the deps node pitch derive from it; the
+  // card HEIGHT lives separately in the CSS var --sm-card-h.
+  const CARD_WIDTH_PX = 280;
+
   // Type → Cluster mapping (cmapper-Palette, von Story-Map übernommen).
   const TYPE_TO_CLUSTER = {
     "epic":                    "plum",
@@ -607,6 +614,7 @@
   }
 
   return {
+    CARD_WIDTH_PX,
     TYPE_TO_CLUSTER,
     clusterForType,
     checklistBadge,
