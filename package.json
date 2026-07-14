@@ -30,6 +30,8 @@
   "scripts": {
     "start": "node server/index.js server",
     "mcp": "node server/index.js mcp",
+    "install-skill": "node scripts/install-skill.js",
+    "package-skill": "node scripts/install-skill.js --zip",
     "test": "node tests/run.js",
     "walkthrough": "node tests/mcp-walkthrough.js",
     "anim-walkthrough": "node tests/mcp-animation-walkthrough.js",

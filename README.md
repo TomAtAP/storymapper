@@ -120,9 +120,46 @@ the HTTP server relays every MCP write to connected browsers over WebSocket.
 > second; `--force` takes over a stale lock after a crash). The MCP process is
 > exempt and may always share the data dir.
 
-A companion **skill** (`skill/SKILL.md`) teaches the agent how to use the board —
-the DoR/DoD contract, the workflow, when to pull vs. push. Load it into your
-Claude client to get planning behaviour out of the box.
+### Install the companion skill
+
+The MCP server gives the agent *tools*; the companion **skill** gives it the
+*working method* — the DoR/DoD contract, the workflow, when to pull vs. push.
+Install it so the agent plans the way the board expects.
+
+**Claude Code**
+
+```sh
+npm run install-skill
+# → copies skill/ to ~/.claude/skills/storymap (personal, all projects)
+
+npm run install-skill -- --target=/path/to/repo/.claude/skills
+# → installs into one project's skills directory instead
+```
+
+Re-running the command updates an existing installation in place — do this
+after pulling a new Storymapper version. Restart your Claude session so the
+skill is picked up.
+
+**Claude Desktop**
+
+```sh
+npm run package-skill
+# → builds dist/storymap-skill.zip
+```
+
+Upload the zip in Claude Desktop under **Settings → Capabilities → Skills**.
+Re-run and re-upload after pulling a new version.
+
+**Other harnesses (Codex, …)**
+
+The zip is a plain-Markdown package — `storymap/SKILL.md` plus its
+`reference/` files. Unpack it wherever your harness keeps instructions and
+point the harness at it, e.g. from an `AGENTS.md`:
+
+```md
+Before planning work on the Storymapper board, read storymap/SKILL.md
+(and the reference/ files it names) and follow that working method.
+```
 
 ## Security model (single-user, local)
 
