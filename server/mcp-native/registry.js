@@ -43,6 +43,12 @@ class ToolError extends Error {
 
 function createRegistry() {
   const tools = new Map();   // name → { description, objectSchema, handler }
+  // SDK-compatible view (name → { handler, description }) for in-process callers
+  // that invoke a tool's raw handler directly, bypassing the transport — e.g.
+  // the in-process test harness (tests/test-mcp.js: server._registeredTools[name]
+  // .handler(args)). The handler here is the RAW callback (no validation), exactly
+  // what @modelcontextprotocol/sdk exposed. Drop this when the core is extracted.
+  const registeredTools = Object.create(null);
 
   function register(name, def, handler) {
     // Accept both call shapes: register(name, {description, inputSchema, handler})
@@ -60,11 +66,9 @@ function createRegistry() {
     // out-of-band args (e.g. the identity seam's `actor`, which no tool declares)
     // still reach the handler — matching the SDK's lenient behaviour.
     const objectSchema = z.object(shape).passthrough();
-    tools.set(name, {
-      description: (def && def.description) || "",
-      objectSchema,
-      handler
-    });
+    const description = (def && def.description) || "";
+    tools.set(name, { description, objectSchema, handler });
+    registeredTools[name] = { handler, description };
     return api;   // chainable
   }
 
@@ -113,7 +117,9 @@ function createRegistry() {
     return t.handler(args);
   }
 
-  const api = { register, has, size, listTools, dispatch };
+  // `registerTool` is an alias for `register` matching the SDK's method name, so
+  // the 70 existing `server.registerTool(...)` calls port over unchanged.
+  const api = { register, registerTool: register, has, size, listTools, dispatch, _registeredTools: registeredTools };
   return api;
 }
 

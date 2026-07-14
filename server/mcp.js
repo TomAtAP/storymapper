@@ -14,8 +14,9 @@
  *    "Claude" vs. "HTTP User" on the REST side).
  */
 
-const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
-const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
+// SM-310: native, dependency-free MCP layer — replaces @modelcontextprotocol/sdk.
+const { createRegistry } = require("./mcp-native/registry.js");
+const { createStdioServer } = require("./mcp-native/stdio.js");
 const { z } = require("zod");
 const core = require("./core.js");
 const coreGraph = require("./core/graph.js");
@@ -348,7 +349,7 @@ function buildServer(storage, opts) {
   opts = opts || {};
   const httpUrl = typeof opts.httpUrl === "string" ? opts.httpUrl : null;
   const fetchImpl = opts.fetchImpl || (typeof fetch === "function" ? fetch : null);
-  const server = new McpServer({ name: "storymap", version: "0.1.0" });
+  const server = createRegistry();   // native tool registry (SM-308/310), was new McpServer(...)
 
   // E20.E: cross-process live-sync. The HTTP server's bus is in its OWN
   // process; MCP subprocess writes never reach connected browsers unless
@@ -2479,8 +2480,9 @@ async function runStdio(storage, opts) {
     ? opts.httpUrl
     : (process.env.STORYMAP_HTTP_URL || "http://localhost:8770");
   const server = buildServer(storage, { httpUrl, fetchImpl: opts.fetchImpl });
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  // SM-309/310: the native stdio frontend replaces StdioServerTransport +
+  // server.connect(). Returns { close } — index.js drives transport.close().
+  const transport = createStdioServer(server, { input: process.stdin, output: process.stdout });
   return { server, transport };
 }
 

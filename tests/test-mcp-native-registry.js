@@ -138,6 +138,25 @@ test("dispatch with null args runs a no-arg tool (treated as {})", async () => {
   assert.strictEqual(res.content[0].text, "listed");
 });
 
+// --- SM-310 compat surface (used by the in-process test harness) ------------
+
+test("registerTool is an SDK-named alias for register (70 tools port unchanged)", () => {
+  const r = createRegistry();
+  r.registerTool("t", { description: "d", inputSchema: { a: z.string() } }, async (a) => ({ content: [{ type: "text", text: a.a }] }));
+  assert.ok(r.has("t"));
+});
+
+test("_registeredTools exposes the raw handler + description for in-process callers", async () => {
+  const r = createRegistry();
+  r.register("echo", { description: "e", inputSchema: { msg: z.string() }, handler: async (a) => ({ content: [{ type: "text", text: a.msg }] }) });
+  const entry = r._registeredTools["echo"];
+  assert.ok(entry && typeof entry.handler === "function", "_registeredTools[name].handler is the raw callback");
+  assert.strictEqual(entry.description, "e");
+  const res = await entry.handler({ msg: "hi" });
+  assert.strictEqual(res.content[0].text, "hi", "raw handler runs without going through dispatch");
+  assert.strictEqual(r._registeredTools["missing"], undefined, "unknown tool → undefined (presence check)");
+});
+
 module.exports.done = chain.then(() => {
   console.log(`\n  ${passed} passed, ${failed} failed`);
 });
