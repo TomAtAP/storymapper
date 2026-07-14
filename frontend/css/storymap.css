@@ -1146,7 +1146,7 @@ main.sidebar-open { grid-template-columns: 1fr 360px; }
   transition: transform 0.1s, box-shadow 0.1s;
   flex: 0 1 auto;       /* shrink-to-fit innerhalb von .sm-cell-epics */
   width: fit-content;
-  min-width: 232px;     /* eine Story-Spaltenbreite + Padding */
+  min-width: 292px;     /* eine Story-Spaltenbreite (280) + Padding */
   max-width: 100%;      /* SM-55: niemals breiter als die Cell */
 }
 .sm-epic-card:hover {
@@ -1363,7 +1363,7 @@ main.sidebar-open { grid-template-columns: 1fr 360px; }
 .sm-card-meta {
   display: flex; gap: 4px; flex-wrap: nowrap; align-items: center;
   margin-top: 4px;
-  overflow: hidden;   /* SM-131: einzeilig, Überlauf (Links/Exec) clippen */
+  overflow: hidden;   /* einzeilig — die breiteren Karten (280px) fassen alle Badges in eine Zeile */
   font-size: 10px; color: var(--ink-soft);
 }
 .sm-card-status {
@@ -1371,6 +1371,7 @@ main.sidebar-open { grid-template-columns: 1fr 360px; }
   border-radius: 999px;
   font-size: 9px; font-weight: 500;
   text-transform: capitalize;
+  white-space: nowrap;   /* Status-Pille nie intern umbrechen (z.B. "In-Progress") */
 }
 .sm-card-release-tag {
   display: inline-block;
