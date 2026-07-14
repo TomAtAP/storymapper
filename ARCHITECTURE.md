@@ -75,7 +75,10 @@ server/
   bus.js                Process-wide EventEmitter ('change', 'switch_request', …).
   identity.js           Actor resolution + the pluggable authorize() choke-point.
   server.js             HTTP routing + WebSocket layer. Exports startServer().
-  mcp.js                MCP tools wrapping ops + storage.
+  mcp.js                MCP tool definitions (~70) wrapping ops + storage.
+  mcp-native/           Dependency-free MCP layer (replaces the MCP SDK):
+    registry.js         Transport-agnostic tool registry: register/listTools/dispatch.
+    stdio.js            JSON-RPC 2.0 stdio frontend over the registry.
   index.js              CLI entry: `storymapper server|mcp`. Shutdown handling.
   ingest.js             PDF/DOCX slice-candidate extraction (import pipeline).
 
@@ -265,6 +268,16 @@ prompt and a long-poll.
 
 ## 13. MCP layer
 
+- **Dependency-free.** The MCP server is served over stdio by
+  `server/mcp-native/` — a transport-agnostic tool registry (`registry.js`:
+  register / listTools / dispatch) plus a JSON-RPC 2.0 stdio frontend
+  (`stdio.js`) — with **no external dependency**. It replaced
+  `@modelcontextprotocol/sdk`, which pulled an entire Express 5 + Hono transport
+  tree that was never executed (MCP is stdio-only; the HTTP layer is raw `http`).
+  Zod v4 emits the `tools/list` JSON Schemas natively (`z.toJSONSchema`), so no
+  schema-converter dependency is needed. `tools/call` failures (unknown tool,
+  invalid args, a throwing handler) come back as `isError` tool results, not
+  JSON-RPC errors — matching prior behaviour.
 - ~70 tools, each defined with a Zod input schema and delegating to the shared
   ops. Responses are **compact by default** (the changed entity + `revision` +
   `savedAt`, not the whole snapshot).
