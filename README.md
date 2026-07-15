@@ -1,5 +1,7 @@
 # Storymapper
 
+![Story Map view](docs/images/map.png)
+
 **A User Story Map + Kanban board that a human and an AI coding agent plan
 together — the same backlog, live, from a browser and from an MCP client.**
 
@@ -18,8 +20,6 @@ Storymapper is one Node.js package that ships three things:
 
 The result is a **shared planning surface**: the agent isn't writing to a
 database the human can't see — the two work the same board in real time.
-
-![Story Map view — process steps across the top, releases as rows, epics and stories in the cells, with status and DoR/DoD badges on every card](docs/images/map.png)
 
 ---
 
@@ -86,11 +86,15 @@ npm start
 # → Ctrl-C to stop
 ```
 
+![Kanban view](docs/images/kanban.png)
+
 Open <http://localhost:8770/>. The page probes `/api/health` on its own origin
 and uses the HTTP backend automatically — no URL parameter needed. If it is
 served from somewhere else it falls back to `localStorage`; you can pin a
 specific server with `?api=<url>`. The page must be served from a loopback origin
 (`localhost` / `127.0.0.1`) — `file://` is not supported (see the security model).
+
+![Dependency graph view](docs/images/dependency-graph.png)
 
 ## Connect it to your Claude (one command per surface)
 
