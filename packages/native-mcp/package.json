@@ -1,0 +1,34 @@
+{
+  "name": "native-mcp",
+  "version": "0.1.0",
+  "description": "A tiny, zero-dependency native MCP server toolkit: a validator-agnostic tool registry with a JSON-RPC 2.0 stdio frontend and a pass-through CLI.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "stdio",
+    "json-rpc",
+    "cli",
+    "zero-dependency",
+    "tool-registry",
+    "agent"
+  ],
+  "author": "Thomas Schwenger",
+  "license": "Apache-2.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node test/run.js"
+  },
+  "files": [
+    "registry.js",
+    "stdio.js",
+    "cli.js",
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {},
+  "engines": {
+    "node": ">=20"
+  }
+}

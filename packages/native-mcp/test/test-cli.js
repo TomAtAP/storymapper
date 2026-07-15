@@ -9,8 +9,8 @@
  */
 
 const assert = require("assert");
-const { createRegistry } = require("../server/mcp-native/registry.js");
-const { runCli } = require("../server/mcp-native/cli.js");
+const { createRegistry } = require("../registry.js");
+const { runCli } = require("../cli.js");
 
 let passed = 0, failed = 0;
 let chain = Promise.resolve();

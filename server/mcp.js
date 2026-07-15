@@ -15,8 +15,9 @@
  */
 
 // SM-310: native, dependency-free MCP layer — replaces @modelcontextprotocol/sdk.
-const { createRegistry } = require("./mcp-native/registry.js");
-const { createStdioServer } = require("./mcp-native/stdio.js");
+// SM-312: the native MCP layer is the standalone, zero-dependency `native-mcp`
+// package (packages/native-mcp) — replaces @modelcontextprotocol/sdk.
+const { createRegistry, createStdioServer } = require("../packages/native-mcp");
 const { z } = require("zod");
 const core = require("./core.js");
 const coreGraph = require("./core/graph.js");

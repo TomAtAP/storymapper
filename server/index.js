@@ -185,7 +185,7 @@ lock). 'storymap mcp' may always share the data-dir with a running server.
     // server uses (SM-311). `storymap tool <name> ['<json>']` or pipe JSON stdin.
     const Storage = require("./storage.js");
     const { buildServer } = require("./mcp.js");
-    const { runCli } = require("./mcp-native/cli.js");
+    const { runCli } = require("../packages/native-mcp");
     const dataDir = resolveDataDir(flags["data-dir"]);
     const storage = new Storage(dataDir);
     await storage.init();

@@ -10,7 +10,7 @@
  */
 
 const assert = require("assert");
-const { createRegistry, ToolError, CODES } = require("../server/mcp-native/registry.js");
+const { createRegistry, ToolError, CODES } = require("../registry.js");
 
 let passed = 0, failed = 0;
 let chain = Promise.resolve();

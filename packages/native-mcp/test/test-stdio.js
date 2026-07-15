@@ -12,8 +12,8 @@
 
 const assert = require("assert");
 const { PassThrough } = require("stream");
-const { createRegistry } = require("../server/mcp-native/registry.js");
-const { createStdioServer, PROTOCOL_VERSION } = require("../server/mcp-native/stdio.js");
+const { createRegistry } = require("../registry.js");
+const { createStdioServer, PROTOCOL_VERSION } = require("../stdio.js");
 
 let passed = 0, failed = 0;
 let chain = Promise.resolve();
