@@ -100,6 +100,12 @@ async function main() {
     console.log(`Usage:
   storymap server [--port=N] [--data-dir=PATH] [--host=HOST] [--allow-remote] [--force]
   storymap mcp    [--data-dir=PATH]
+  storymap tool   <name> ['<json-args>'] [--data-dir=PATH]
+
+'storymap tool' is a pass-through: it runs ONE MCP tool over the same tool core
+the MCP server uses and prints the result JSON to stdout. Arguments come from a
+positional JSON string, --json=<json>, or piped stdin. Exit: 0 ok, 1 tool
+isError, 2 unknown tool / bad args.
 
 The server binds to loopback (localhost) only. Binding to a non-loopback host
 exposes all projects with NO authentication and is refused unless you pass
@@ -174,6 +180,29 @@ lock). 'storymap mcp' may always share the data-dir with a running server.
     return;
   }
 
+  if (cmd === "tool") {
+    // Pass-through CLI: run ONE MCP tool over the same native tool core the MCP
+    // server uses (SM-311). `storymap tool <name> ['<json>']` or pipe JSON stdin.
+    const Storage = require("./storage.js");
+    const { buildServer } = require("./mcp.js");
+    const { runCli } = require("./mcp-native/cli.js");
+    const dataDir = resolveDataDir(flags["data-dir"]);
+    const storage = new Storage(dataDir);
+    await storage.init();
+    const httpUrl = (typeof flags["http-url"] === "string")
+      ? flags["http-url"] : (process.env.STORYMAP_HTTP_URL || "http://localhost:8770");
+    // buildServer registers all ~70 tools on the native registry (same as MCP).
+    const registry = buildServer(storage, { httpUrl });
+    // JSON args come from `tool <name> '<json>'` (positional) or --json=<json>;
+    // if neither is given and stdin is piped, read the JSON from stdin.
+    const jsonArg = (typeof flags.json === "string") ? flags.json : positional[2];
+    let stdinData;
+    if (jsonArg === undefined && !process.stdin.isTTY) stdinData = await readAllStdin();
+    const code = await runCli(registry, { name: positional[1], json: jsonArg }, { stdinData });
+    try { storage.close(); } catch (_) { /* ignore */ }
+    process.exit(code);
+  }
+
   console.error("unknown command: " + cmd);
   process.exit(2);
 }
@@ -188,6 +217,18 @@ lock). 'storymap mcp' may always share the data-dir with a running server.
  *   - allowStdin=true: Ctrl-D auf TTY = graceful shutdown (für server-mode).
  *     allowStdin=false: stdin-Lebenszyklus gehört dem Caller (mcp-mode).
  */
+// Read all of stdin as a UTF-8 string — used by `tool` mode when the JSON args
+// are piped rather than passed as an argument.
+function readAllStdin() {
+  return new Promise((resolve) => {
+    let data = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (c) => { data += c; });
+    process.stdin.on("end", () => resolve(data));
+    process.stdin.resume();
+  });
+}
+
 function installShutdown(label, shutdownFn, opts) {
   opts = opts || {};
   let shuttingDown = false;
