@@ -19,6 +19,8 @@ Storymapper is one Node.js package that ships three things:
 The result is a **shared planning surface**: the agent isn't writing to a
 database the human can't see — the two work the same board in real time.
 
+![Story Map view — process steps across the top, releases as rows, epics and stories in the cells, with status and DoR/DoD badges on every card](docs/images/map.png)
+
 ---
 
 ## Why it exists
