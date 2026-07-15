@@ -349,7 +349,27 @@ function buildServer(storage, opts) {
   opts = opts || {};
   const httpUrl = typeof opts.httpUrl === "string" ? opts.httpUrl : null;
   const fetchImpl = opts.fetchImpl || (typeof fetch === "function" ? fetch : null);
-  const server = createRegistry();   // native tool registry (SM-308/310), was new McpServer(...)
+  // SM-312: the native registry is validator-agnostic (zod-free). The 70 tool
+  // defs below still pass a Zod SHAPE as `inputSchema` (ergonomic); this adapter
+  // emits the JSON Schema (z.toJSONSchema) + a validate() (z.object(shape)
+  // .passthrough().parse — preserving tolerateJsonString + the `actor` passthrough)
+  // so the extractable native package stays zod-free while Storymapper keeps Zod.
+  // `server` inherits dispatch/listTools/_registeredTools from the registry;
+  // only registerTool/register are wrapped.
+  const registry = createRegistry();
+  const server = Object.create(registry);
+  server.registerTool = server.register = function registerZodTool(name, meta, handler) {
+    const shape = (meta && meta.inputSchema) || {};
+    const objectSchema = z.object(shape).passthrough();
+    let jsonSchema;
+    try { jsonSchema = z.toJSONSchema(objectSchema, { io: "input" }); }
+    catch (_) { jsonSchema = { type: "object", additionalProperties: true }; }
+    return registry.register(name, {
+      description: meta && meta.description,
+      inputSchema: jsonSchema,
+      validate: (args) => objectSchema.parse(args == null ? {} : args)
+    }, handler);
+  };
 
   // E20.E: cross-process live-sync. The HTTP server's bus is in its OWN
   // process; MCP subprocess writes never reach connected browsers unless

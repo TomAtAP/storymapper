@@ -1,15 +1,15 @@
 "use strict";
 
 /**
- * SM-308 — the native, transport-agnostic tool core (server/mcp-native/registry.js).
- *
- * Covers register (both call shapes), listTools JSON-Schema emission (incl. a
- * tolerateJsonString-style preprocessor), and dispatch (happy path, passthrough
- * of out-of-band keys, unknown-tool + invalid-params errors, null-args).
+ * SM-308 / SM-312 — the native, transport-agnostic, ZERO-DEPENDENCY tool core
+ * (server/mcp-native/registry.js). The registry is validator-agnostic: a tool
+ * brings a JSON Schema (for tools/list) + an optional validate(args) fn. These
+ * tests use plain JSON Schema + hand-rolled validators — no validation library,
+ * mirroring the package's zero-dependency contract. (The Zod adapter that wires
+ * Storymapper's schemas lives in server/mcp.js and is covered by the MCP tests.)
  */
 
 const assert = require("assert");
-const { z } = require("zod");
 const { createRegistry, ToolError, CODES } = require("../server/mcp-native/registry.js");
 
 let passed = 0, failed = 0;
@@ -21,97 +21,83 @@ function test(name, fn) {
   });
 }
 
-// A tolerateJsonString-style field (mirrors server/mcp.js) — the MCP bridge may
-// serialise nested objects as JSON strings; a z.preprocess must survive both
-// the JSON-Schema emission and validation.
-function tolerateJsonString(schema) {
-  return z.preprocess((v) => {
-    if (typeof v === "string") { try { return JSON.parse(v); } catch (_) { return v; } }
-    return v;
-  }, schema);
+const okResult = (text) => ({ content: [{ type: "text", text }] });
+// A hand-rolled validator: require projectId to be a string. Throws on failure.
+function requireProjectId(args) {
+  if (!args || typeof args.projectId !== "string") throw new Error("projectId must be a string");
+  return args;
 }
-const positionSchema = tolerateJsonString(z.object({
-  releaseId: z.string().nullable().optional(),
-  epicId: z.string().nullable().optional()
-}).partial()).optional();
 
 test("register + has + size (def carries the handler)", () => {
   const r = createRegistry();
-  r.register("noop", { description: "d", inputSchema: {}, handler: async () => ({ content: [] }) });
+  r.register("noop", { description: "d", handler: async () => okResult("") });
   assert.strictEqual(r.size(), 1);
   assert.ok(r.has("noop"));
   assert.ok(!r.has("missing"));
 });
 
-test("register supports the SDK 3-arg shape register(name, meta, handler)", () => {
+test("register supports the 3-arg shape register(name, meta, handler)", () => {
   const r = createRegistry();
-  r.register("t", { description: "d", inputSchema: { a: z.string() } }, async (args) => ({ content: [{ type: "text", text: args.a }] }));
+  r.register("t", { description: "d", inputSchema: { type: "object" } }, async () => okResult("x"));
   assert.ok(r.has("t"));
 });
 
 test("register is chainable", () => {
   const r = createRegistry();
-  const ret = r.register("a", { inputSchema: {}, handler: async () => ({ content: [] }) });
-  assert.strictEqual(ret, r, "register returns the registry for chaining");
+  assert.strictEqual(r.register("a", { handler: async () => okResult("") }), r);
 });
 
 test("duplicate register throws", () => {
   const r = createRegistry();
-  r.register("dup", { inputSchema: {}, handler: async () => ({ content: [] }) });
-  assert.throws(() => r.register("dup", { inputSchema: {}, handler: async () => ({ content: [] }) }), /duplicate tool/);
+  r.register("dup", { handler: async () => okResult("") });
+  assert.throws(() => r.register("dup", { handler: async () => okResult("") }), /duplicate tool/);
 });
 
 test("register without a handler throws", () => {
   const r = createRegistry();
-  assert.throws(() => r.register("bad", { inputSchema: {} }), /handler function is required/);
+  assert.throws(() => r.register("bad", { inputSchema: { type: "object" } }), /handler function is required/);
 });
 
-test("register with an empty/absent inputSchema is a no-arg tool", () => {
+test("listTools returns the JSON Schema VERBATIM (no conversion, no dependency)", () => {
   const r = createRegistry();
-  r.register("noargs", { handler: async () => ({ content: [{ type: "text", text: "ok" }] }) });
-  const list = r.listTools();
-  assert.strictEqual(list[0].inputSchema.type, "object");
-});
-
-test("listTools emits JSON Schema with required + properties", () => {
-  const r = createRegistry();
-  r.register("get", { description: "get it", inputSchema: { projectId: z.string(), verbose: z.boolean().optional() }, handler: async () => ({ content: [] }) });
+  const schema = { type: "object", properties: { projectId: { type: "string" } }, required: ["projectId"] };
+  r.register("get", { description: "get it", inputSchema: schema, handler: async () => okResult("") });
   const [tool] = r.listTools();
   assert.strictEqual(tool.name, "get");
   assert.strictEqual(tool.description, "get it");
-  assert.strictEqual(tool.inputSchema.type, "object");
-  assert.ok(tool.inputSchema.properties.projectId, "projectId property present");
-  assert.deepStrictEqual(tool.inputSchema.required, ["projectId"], "only projectId is required");
+  assert.deepStrictEqual(tool.inputSchema, schema, "inputSchema is passed through unchanged");
 });
 
-test("listTools handles a tolerateJsonString preprocessor field without throwing", () => {
+test("a tool with no inputSchema lists a permissive object schema", () => {
   const r = createRegistry();
-  r.register("mv", { inputSchema: { position: positionSchema }, handler: async () => ({ content: [] }) });
+  r.register("noargs", { handler: async () => okResult("ok") });
   const [tool] = r.listTools();
-  assert.strictEqual(tool.inputSchema.type, "object", "schema still emits as an object");
+  assert.strictEqual(tool.inputSchema.type, "object");
+  assert.strictEqual(tool.inputSchema.additionalProperties, true);
 });
 
-test("dispatch validates + runs the handler, returning its result", async () => {
+test("dispatch runs validate() then the handler, returning its result", async () => {
   const r = createRegistry();
-  r.register("echo", { inputSchema: { msg: z.string() }, handler: async (args) => ({ content: [{ type: "text", text: args.msg }] }) });
+  r.register("echo", { validate: (a) => a, handler: async (a) => okResult(a.msg) });
   const res = await r.dispatch("echo", { msg: "hi" });
   assert.strictEqual(res.content[0].text, "hi");
 });
 
-test("dispatch passes through out-of-band keys (identity seam's actor survives)", async () => {
+test("dispatch WITHOUT a validator passes raw args through (extra keys survive)", async () => {
   const r = createRegistry();
   let seen = null;
-  r.register("who", { inputSchema: { projectId: z.string() }, handler: async (args) => { seen = args; return { content: [] }; } });
-  await r.dispatch("who", { projectId: "p1", actor: { type: "ai", id: "claude" } });
-  assert.ok(seen.actor && seen.actor.id === "claude", "undeclared 'actor' key reaches the handler");
+  r.register("who", { handler: async (a) => { seen = a; return okResult(""); } });
+  await r.dispatch("who", { projectId: "p1", actor: { id: "claude" } });
+  assert.strictEqual(seen.projectId, "p1");
+  assert.ok(seen.actor && seen.actor.id === "claude", "undeclared keys reach the handler untouched");
 });
 
-test("dispatch tolerates a JSON-string argument via the preprocessor", async () => {
+test("dispatch uses the validator's RETURN value as the handler args (coercion)", async () => {
   const r = createRegistry();
   let seen = null;
-  r.register("mv", { inputSchema: { position: positionSchema }, handler: async (args) => { seen = args; return { content: [] }; } });
-  await r.dispatch("mv", { position: JSON.stringify({ releaseId: "r1" }) });
-  assert.strictEqual(seen.position.releaseId, "r1", "stringified object parsed back before the handler");
+  r.register("coerce", { validate: (a) => Object.assign({}, a, { coerced: true }), handler: async (a) => { seen = a; return okResult(""); } });
+  await r.dispatch("coerce", { x: 1 });
+  assert.strictEqual(seen.coerced, true, "handler receives what validate returned");
 });
 
 test("dispatch on an unknown tool throws ToolError(UNKNOWN_TOOL)", async () => {
@@ -119,42 +105,43 @@ test("dispatch on an unknown tool throws ToolError(UNKNOWN_TOOL)", async () => {
   await assert.rejects(() => r.dispatch("nope", {}), (e) => e instanceof ToolError && e.code === CODES.UNKNOWN_TOOL);
 });
 
-test("dispatch with a missing required arg throws ToolError(INVALID_PARAMS)", async () => {
+test("a validator throw becomes ToolError(INVALID_PARAMS)", async () => {
   const r = createRegistry();
-  r.register("need", { inputSchema: { projectId: z.string() }, handler: async () => ({ content: [] }) });
-  await assert.rejects(() => r.dispatch("need", {}), (e) => e instanceof ToolError && e.code === CODES.INVALID_PARAMS);
+  r.register("need", { validate: requireProjectId, handler: async () => okResult("") });
+  await assert.rejects(() => r.dispatch("need", {}), (e) => e instanceof ToolError && e.code === CODES.INVALID_PARAMS && /projectId/.test(e.message));
 });
 
-test("dispatch with a wrong-typed arg throws ToolError(INVALID_PARAMS)", async () => {
+test("a validator's Zod-style issue list is formatted into the INVALID_PARAMS message", async () => {
   const r = createRegistry();
-  r.register("typed", { inputSchema: { n: z.number() }, handler: async () => ({ content: [] }) });
-  await assert.rejects(() => r.dispatch("typed", { n: "not-a-number" }), (e) => e instanceof ToolError && e.code === CODES.INVALID_PARAMS);
+  r.register("issues", {
+    validate: () => { const e = new Error("bad"); e.issues = [{ path: ["a", "b"], message: "required" }]; throw e; },
+    handler: async () => okResult("")
+  });
+  await assert.rejects(() => r.dispatch("issues", {}), (e) => e instanceof ToolError && /a\.b: required/.test(e.message));
 });
 
-test("dispatch with null args runs a no-arg tool (treated as {})", async () => {
+test("dispatch with null args runs a no-validator tool (treated as {})", async () => {
   const r = createRegistry();
-  r.register("list", { inputSchema: {}, handler: async () => ({ content: [{ type: "text", text: "listed" }] }) });
+  r.register("list", { handler: async (a) => okResult(a && typeof a === "object" ? "obj" : "nope") });
   const res = await r.dispatch("list", null);
-  assert.strictEqual(res.content[0].text, "listed");
+  assert.strictEqual(res.content[0].text, "obj");
 });
 
-// --- SM-310 compat surface (used by the in-process test harness) ------------
-
-test("registerTool is an SDK-named alias for register (70 tools port unchanged)", () => {
+test("registerTool is an SDK-named alias for register", () => {
   const r = createRegistry();
-  r.registerTool("t", { description: "d", inputSchema: { a: z.string() } }, async (a) => ({ content: [{ type: "text", text: a.a }] }));
+  r.registerTool("t", { handler: async () => okResult("") });
   assert.ok(r.has("t"));
 });
 
 test("_registeredTools exposes the raw handler + description for in-process callers", async () => {
   const r = createRegistry();
-  r.register("echo", { description: "e", inputSchema: { msg: z.string() }, handler: async (a) => ({ content: [{ type: "text", text: a.msg }] }) });
+  r.register("echo", { description: "e", validate: (a) => a, handler: async (a) => okResult(a.msg) });
   const entry = r._registeredTools["echo"];
-  assert.ok(entry && typeof entry.handler === "function", "_registeredTools[name].handler is the raw callback");
+  assert.ok(entry && typeof entry.handler === "function");
   assert.strictEqual(entry.description, "e");
-  const res = await entry.handler({ msg: "hi" });
-  assert.strictEqual(res.content[0].text, "hi", "raw handler runs without going through dispatch");
-  assert.strictEqual(r._registeredTools["missing"], undefined, "unknown tool → undefined (presence check)");
+  const res = await entry.handler({ msg: "raw" });   // raw handler bypasses validate
+  assert.strictEqual(res.content[0].text, "raw");
+  assert.strictEqual(r._registeredTools["missing"], undefined);
 });
 
 module.exports.done = chain.then(() => {

@@ -9,7 +9,6 @@
  */
 
 const assert = require("assert");
-const { z } = require("zod");
 const { createRegistry } = require("../server/mcp-native/registry.js");
 const { runCli } = require("../server/mcp-native/cli.js");
 
@@ -25,10 +24,10 @@ function test(name, fn) {
 function mockStream() { return { buf: "", write(s) { this.buf += s; return true; } }; }
 function buildRegistry() {
   const r = createRegistry();
-  r.register("echo",   { inputSchema: { msg: z.string() }, handler: async (a) => ({ content: [{ type: "text", text: JSON.stringify({ echoed: a.msg }) }] }) });
-  r.register("noargs", { inputSchema: {}, handler: async () => ({ content: [{ type: "text", text: JSON.stringify({ ok: true }) }] }) });
-  r.register("need",   { inputSchema: { projectId: z.string() }, handler: async () => ({ content: [{ type: "text", text: "{}" }] }) });
-  r.register("gate",   { inputSchema: {}, handler: async () => ({ content: [{ type: "text", text: JSON.stringify({ error: "DoD missing" }) }], isError: true }) });
+  r.register("echo",   { handler: async (a) => ({ content: [{ type: "text", text: JSON.stringify({ echoed: a.msg }) }] }) });
+  r.register("noargs", { handler: async () => ({ content: [{ type: "text", text: JSON.stringify({ ok: true }) }] }) });
+  r.register("need",   { validate: (a) => { if (typeof a.projectId !== "string") throw new Error("projectId required"); return a; }, handler: async () => ({ content: [{ type: "text", text: "{}" }] }) });
+  r.register("gate",   { handler: async () => ({ content: [{ type: "text", text: JSON.stringify({ error: "DoD missing" }) }], isError: true }) });
   return r;
 }
 

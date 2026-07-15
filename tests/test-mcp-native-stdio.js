@@ -12,7 +12,6 @@
 
 const assert = require("assert");
 const { PassThrough } = require("stream");
-const { z } = require("zod");
 const { createRegistry } = require("../server/mcp-native/registry.js");
 const { createStdioServer, PROTOCOL_VERSION } = require("../server/mcp-native/stdio.js");
 
@@ -98,7 +97,7 @@ test("ping → {}", async () => {
 });
 
 test("tools/list returns registered tools with JSON Schema", async () => {
-  const h = harness(reg => reg.register("get", { description: "d", inputSchema: { projectId: z.string() }, handler: async () => ({ content: [] }) }));
+  const h = harness(reg => reg.register("get", { description: "d", inputSchema: { type: "object", properties: { projectId: { type: "string" } } }, handler: async () => ({ content: [] }) }));
   h.send({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} });
   const r = await h.waitFor(l => l.id === 1);
   assert.strictEqual(r.result.tools.length, 1);
@@ -108,7 +107,7 @@ test("tools/list returns registered tools with JSON Schema", async () => {
 });
 
 test("tools/call happy path returns the handler result", async () => {
-  const h = harness(reg => reg.register("echo", { inputSchema: { msg: z.string() }, handler: async (a) => ({ content: [{ type: "text", text: a.msg }] }) }));
+  const h = harness(reg => reg.register("echo", { handler: async (a) => ({ content: [{ type: "text", text: a.msg }] }) }));
   h.send({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "echo", arguments: { msg: "hi" } } });
   const r = await h.waitFor(l => l.id === 2);
   assert.strictEqual(r.result.content[0].text, "hi");
@@ -127,7 +126,7 @@ test("tools/call on an UNKNOWN tool → isError RESULT, not a JSON-RPC error", a
 });
 
 test("tools/call with INVALID args → isError RESULT, not a JSON-RPC error", async () => {
-  const h = harness(reg => reg.register("need", { inputSchema: { projectId: z.string() }, handler: async () => ({ content: [] }) }));
+  const h = harness(reg => reg.register("need", { validate: (a) => { if (typeof a.projectId !== "string") throw new Error("projectId required"); return a; }, handler: async () => ({ content: [] }) }));
   h.send({ jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "need", arguments: {} } });
   const r = await h.waitFor(l => l.id === 4);
   assert.ok(!r.error, "must NOT be a JSON-RPC error");
@@ -138,8 +137,8 @@ test("tools/call with INVALID args → isError RESULT, not a JSON-RPC error", as
 
 test("a THROWING handler → isError RESULT and the loop survives (no crash)", async () => {
   const h = harness(reg => {
-    reg.register("boom", { inputSchema: {}, handler: async () => { throw new Error("kaboom"); } });
-    reg.register("ok", { inputSchema: {}, handler: async () => ({ content: [{ type: "text", text: "still-alive" }] }) });
+    reg.register("boom", { handler: async () => { throw new Error("kaboom"); } });
+    reg.register("ok", { handler: async () => ({ content: [{ type: "text", text: "still-alive" }] }) });
   });
   h.send({ jsonrpc: "2.0", id: 5, method: "tools/call", params: { name: "boom", arguments: {} } });
   const r = await h.waitFor(l => l.id === 5);
@@ -173,8 +172,8 @@ test("dispatch is non-blocking: a slow handler does not stall a later request", 
   let release;
   const gate = new Promise(r => { release = r; });
   const h = harness(reg => {
-    reg.register("slow", { inputSchema: {}, handler: async () => { await gate; return { content: [{ type: "text", text: "slow" }] }; } });
-    reg.register("fast", { inputSchema: {}, handler: async () => ({ content: [{ type: "text", text: "fast" }] }) });
+    reg.register("slow", { handler: async () => { await gate; return { content: [{ type: "text", text: "slow" }] }; } });
+    reg.register("fast", { handler: async () => ({ content: [{ type: "text", text: "fast" }] }) });
   });
   h.send({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "slow", arguments: {} } });
   h.send({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "fast", arguments: {} } });
@@ -189,7 +188,7 @@ test("dispatch is non-blocking: a slow handler does not stall a later request", 
 
 test("framing survives a result whose text contains newlines", async () => {
   const multiline = "line1\nline2\n{\n  \"a\": 1\n}";
-  const h = harness(reg => reg.register("m", { inputSchema: {}, handler: async () => ({ content: [{ type: "text", text: multiline }] }) }));
+  const h = harness(reg => reg.register("m", { handler: async () => ({ content: [{ type: "text", text: multiline }] }) }));
   h.send({ jsonrpc: "2.0", id: 9, method: "tools/call", params: { name: "m", arguments: {} } });
   const r = await h.waitFor(l => l.id === 9);   // parses only if it was one line
   assert.strictEqual(r.result.content[0].text, multiline, "inner newlines preserved, framing intact");
@@ -197,7 +196,7 @@ test("framing survives a result whose text contains newlines", async () => {
 });
 
 test("close() is idempotent and stops processing further input", async () => {
-  const h = harness(reg => reg.register("x", { inputSchema: {}, handler: async () => ({ content: [{ type: "text", text: "x" }] }) }));
+  const h = harness(reg => reg.register("x", { handler: async () => ({ content: [{ type: "text", text: "x" }] }) }));
   h.server.close();
   h.server.close();   // second call must not throw
   h.send({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "x", arguments: {} } });
