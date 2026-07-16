@@ -52,6 +52,8 @@ hold an agent's work to a standard you can verify. The workflow itself
 (statuses, transitions, gates, board columns) is configurable per project, and
 the companion skill teaches the agent the discipline, not just the tools.
 
+![Ticket detail — acceptance criteria, Definition of Ready / Definition of Done checklists, and typed links](docs/images/Ticket.png)
+
 ## Design principles
 
 - **Zero build.** No bundler, no transpiler, no TypeScript. The browser loads
