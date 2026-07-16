@@ -2,8 +2,8 @@
 
 ![Story Map view](docs/images/map.png)
 
-**A User Story Map + Kanban board that a human and an AI coding agent plan
-together — the same backlog, live, from a browser and from an MCP client —
+**A User Story Map + Kanban board that a product owner and an AI coding agent
+plan together — the same backlog, live, from a browser and from an MCP client —
 with the quality method built in.**
 
 Storymapper is one Node.js package that ships three things:
@@ -14,10 +14,11 @@ Storymapper is one Node.js package that ships three things:
 2. **An HTTP + WebSocket server** — persists every project in SQLite with a full
    per-project revision history, and pushes changes to connected browsers within
    ~100 ms.
-3. **An MCP server** (stdio) — exposes ~70 tools so Claude Desktop / Claude Code
-   can read and edit the very same data. Anything the agent does appears live in
-   the human's browser with a highlight-and-move animation; anything the human
-   edits flows back to the agent on its next read.
+3. **An MCP server** (stdio) **plus a pass-through CLI** — the same ~70 tools,
+   for Claude Desktop / Claude Code via MCP and for scripts or other harnesses
+   as one-shot commands. Anything the agent does appears live in the product
+   owner's browser with a highlight-and-move animation; anything edited by hand
+   flows back to the agent on its next read.
 
 The result is a **shared planning surface**: the agent isn't writing to a
 database the human can't see — the two work the same board in real time.
@@ -29,20 +30,22 @@ database the human can't see — the two work the same board in real time.
 Planning AI-assisted development breaks down when the plan lives in one place and
 the work in another. Storymapper makes the plan a live, bidirectional artifact:
 
-- The agent proposes a structure — epics, stories, releases, dependencies — and
-  you watch it appear and rearrange it by hand.
-- The human reprioritizes, splits, annotates — and the agent picks it up on its
-  next read and continues from the current state of the board.
+- You bring the product idea and a rough shape of what to build; the agent lays
+  it out on the board — epics, stories, releases, dependencies — and you watch
+  it appear and rearrange it by hand.
+- You reprioritize, split, annotate — and the agent picks it up on its next
+  read and continues from the current state of the board.
 - Every change is a **revision** you can inspect and restore.
 
 ## Quality steering at the product level
 
 When an agent does the building, the human contribution moves up a level: you
-describe the product, review its behavior, and steer through the process. That
+describe the product, review its behavior, and steer the work through the
+process. That
 process is Storymapper's real substance — a complete quality method the engine
 enforces as tool-level rules: a ticket is **specified before it is built**
 (Definition of Ready) and **proven before it counts as done** (Definition of
-Done plus a published test plan with recorded runs), and requirements stay
+Done plus a published test plan with recorded runs), and your requirements stay
 traceably linked to the stories that implement them and the tests that verify
 them. An agent that tries to skip a step gets a structured error naming exactly
 what is missing — and fixes it. This puts professional-grade quality assurance
@@ -68,7 +71,7 @@ the companion skill teaches the agent the discipline, not just the tools.
   readable, dependency-light.
 - **Synchronous SQLite** via `better-sqlite3`, atomic per-save transactions, a
   per-project mutex, and count-bounded revision retention.
-- **Single-user, local-first.** One person plus their agent on one machine. See
+- **Single-user, local-first.** One human plus their agent on one machine. See
   the security model below.
 
 For the full picture — layering, data model, live-sync mechanism, testing
@@ -103,11 +106,15 @@ npm start
 
 ![Kanban view](docs/images/kanban.png)
 
-Open <http://localhost:8770/>. The page probes `/api/health` on its own origin
-and uses the HTTP backend automatically — no URL parameter needed. If it is
-served from somewhere else it falls back to `localStorage`; you can pin a
-specific server with `?api=<url>`. The page must be served from a loopback origin
-(`localhost` / `127.0.0.1`) — `file://` is not supported (see the security model).
+Open <http://localhost:8770/> — that's all. The page connects to the server it
+was loaded from and stores every project there (SQLite, with full revision
+history).
+
+> **Hosting the page somewhere else?** Served from a different origin, the UI
+> runs on browser `localStorage` instead; point it at a running server with
+> `?api=<url>`. The page must be loaded from `localhost` / `127.0.0.1` — opening
+> the HTML directly as a `file://` page is not supported (see the security
+> model).
 
 ![Dependency graph view](docs/images/dependency-graph.png)
 
@@ -115,7 +122,8 @@ specific server with `?api=<url>`. The page must be served from a loopback origi
 
 Storymapper reaches an agent through two parts: the **MCP server** (the tools)
 and the companion **skill** (the working method — the DoR/DoD contract, the
-workflow, when to pull vs. push). Installing one does **not** install the
+workflow discipline, when to read the board and when to write to it).
+Installing one does **not** install the
 other, so the setup commands below always install **both**:
 
 | Surface | Command | What remains |
@@ -175,6 +183,20 @@ Point `--data-dir` at the **same** directory the HTTP server uses. Both processe
 can run concurrently against one SQLite file (WAL mode + a busy-timeout);
 the HTTP server relays every MCP write to connected browsers over WebSocket.
 
+### Scripting without MCP: the CLI
+
+Every tool is also a one-shot CLI command running over the same tool core:
+
+```sh
+node server/index.js tool list_projects
+node server/index.js tool ticket_create '{"projectId": "…", "title": "…"}'
+```
+
+The result JSON goes to stdout (exit codes: `0` ok, `1` tool error, `2` unknown
+tool / bad arguments); arguments come from the positional JSON string,
+`--json=<json>`, or piped stdin. This opens the full tool surface to shell
+scripts, CI jobs and harnesses that don't speak MCP.
+
 > Only one `storymapper server` may run per data directory (a PID lock refuses a
 > second; `--force` takes over a stale lock after a crash). The MCP process is
 > exempt and may always share the data dir.
@@ -196,7 +218,7 @@ machine. There is deliberately no authentication layer:
   `X-Content-Type-Options: nosniff`.
 - `X-Actor-*` headers are **attribution, not authentication** — they label who
   did what in the revision history and are not verified.
-- Verified identity, remote-binding token gates and RBAC are a deliberate later
+- Verified identity, token-gated remote access and RBAC are a deliberate later
   stage; the authorization seam (`server/identity.js`) is already in place.
 
 ## Testing
