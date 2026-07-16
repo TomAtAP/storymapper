@@ -35,18 +35,20 @@ the work in another. Storymapper makes the plan a live, bidirectional artifact:
   next read and continues from the current state of the board.
 - Every change is a **revision** you can inspect and restore.
 
-## Quality without reading the code
+## Quality steering at the product level
 
-When an agent does the building, the human's control point moves from the code
-into the process — and that process is Storymapper's real substance. The engine
-enforces a complete quality method as tool-level rules, not conventions: a
-ticket is **specified before it is built** (Definition of Ready) and **proven
-before it counts as done** (Definition of Done plus a published test plan with
-recorded runs), and requirements stay traceably linked to the stories that
-implement them and the tests that verify them. An agent that tries to skip a
-step gets a structured error naming exactly what is missing — and fixes it.
-That is how a product owner steers the quality of the product without opening
-the code: the method, not the diff, is the review surface. The workflow itself
+When an agent does the building, the human contribution moves up a level: you
+describe the product, review its behavior, and steer through the process. That
+process is Storymapper's real substance — a complete quality method the engine
+enforces as tool-level rules: a ticket is **specified before it is built**
+(Definition of Ready) and **proven before it counts as done** (Definition of
+Done plus a published test plan with recorded runs), and requirements stay
+traceably linked to the stories that implement them and the tests that verify
+them. An agent that tries to skip a step gets a structured error naming exactly
+what is missing — and fixes it. This puts professional-grade quality assurance
+into the hands of everyone who thinks in products — founders, domain experts,
+product owners: the method speaks the language of the product and lets you
+hold an agent's work to a standard you can verify. The workflow itself
 (statuses, transitions, gates, board columns) is configurable per project, and
 the companion skill teaches the agent the discipline, not just the tools.
 
