@@ -3,7 +3,8 @@
 ![Story Map view](docs/images/map.png)
 
 **A User Story Map + Kanban board that a human and an AI coding agent plan
-together — the same backlog, live, from a browser and from an MCP client.**
+together — the same backlog, live, from a browser and from an MCP client —
+with the quality method built in.**
 
 Storymapper is one Node.js package that ships three things:
 
@@ -30,14 +31,24 @@ the work in another. Storymapper makes the plan a live, bidirectional artifact:
 
 - The agent proposes a structure — epics, stories, releases, dependencies — and
   you watch it appear and rearrange it by hand.
-- **Definition of Ready / Definition of Done are first-class and enforced.** Each
-  project defines DoR/DoD checklists (global items + per-ticket-type overrides).
-  An agent *cannot* move a ticket to `done` while a required DoD item is
-  unchecked — the tool returns a structured error listing exactly what's missing.
-- A configurable **workflow engine** (Jira-style statuses, categories, named
-  transitions with source restrictions and gates) and a **Kanban board mapping**
-  (N statuses → 1 column) let you model your own process, not a fixed one.
+- The human reprioritizes, splits, annotates — and the agent picks it up on its
+  next read and continues from the current state of the board.
 - Every change is a **revision** you can inspect and restore.
+
+## Quality without reading the code
+
+When an agent does the building, the human's control point moves from the code
+into the process — and that process is Storymapper's real substance. The engine
+enforces a complete quality method as tool-level rules, not conventions: a
+ticket is **specified before it is built** (Definition of Ready) and **proven
+before it counts as done** (Definition of Done plus a published test plan with
+recorded runs), and requirements stay traceably linked to the stories that
+implement them and the tests that verify them. An agent that tries to skip a
+step gets a structured error naming exactly what is missing — and fixes it.
+That is how a product owner steers the quality of the product without opening
+the code: the method, not the diff, is the review surface. The workflow itself
+(statuses, transitions, gates, board columns) is configurable per project, and
+the companion skill teaches the agent the discipline, not just the tools.
 
 ## Design principles
 
