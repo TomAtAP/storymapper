@@ -27,6 +27,7 @@
   },
   "main": "server/index.js",
   "type": "commonjs",
+  "mcpName": "io.github.tomatap/storymapper",
   "scripts": {
     "start": "node server/index.js server",
     "mcp": "node server/index.js mcp",
@@ -34,6 +35,8 @@
     "install-desktop": "node scripts/install.js claude-desktop",
     "install-skill": "node scripts/install-skill.js",
     "package-skill": "node scripts/install-skill.js --zip",
+    "prepack": "node scripts/pack-dereference.js apply",
+    "postpack": "node scripts/pack-dereference.js restore",
     "test": "node tests/run.js",
     "walkthrough": "node tests/mcp-walkthrough.js",
     "anim-walkthrough": "node tests/mcp-animation-walkthrough.js",

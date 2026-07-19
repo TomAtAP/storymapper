@@ -16,3 +16,8 @@ CLAUDE.md
 
 # Internal working notes — not part of the public release
 STORYMAP-FINDINGS.md
+
+# Local publishing/distribution tooling — not part of the public release
+distribution/
+.pack-symlinks.json
+*.tgz
