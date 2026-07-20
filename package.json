@@ -1,6 +1,6 @@
 {
   "name": "storymapper",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "User Story Map + Kanban board with a live HTTP/WebSocket UI and an MCP server, so AI agents and humans plan the same backlog together.",
   "keywords": [
     "story-map",
